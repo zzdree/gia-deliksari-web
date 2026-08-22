@@ -25,17 +25,7 @@ export default function ScheduleSection() {
       location: 'Ruang Utama Sanctuary GIA Deliksari',
       target: 'Seluruh Keluarga & Jemaat Umum',
       color: 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
-      badge: 'Ibadah Raya',
-    },
-    {
-      category: 'kidz',
-      title: 'COC Kidz (Sekolah Minggu)',
-      day: 'Setiap Hari Minggu',
-      time: '09.30 - 10.30 WIB',
-      location: 'Ruang Kelas Anak KAA',
-      target: 'Anak Usia Balita s/d Sekolah Dasar',
-      color: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
-      badge: 'Sekolah Minggu',
+      badge: '1. Ibadah Raya (General)',
     },
     {
       category: 'youth',
@@ -45,7 +35,17 @@ export default function ScheduleSection() {
       location: 'Youth Hall GIA Deliksari',
       target: 'Remaja, Pemuda & Mahasiswa',
       color: 'border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20',
-      badge: 'Youth & Teen',
+      badge: '2. Grow Generation (Youth)',
+    },
+    {
+      category: 'kidz',
+      title: 'COC Kidz (Sekolah Minggu)',
+      day: 'Setiap Hari Minggu',
+      time: '09.30 - 10.30 WIB',
+      location: 'Ruang Kelas Anak KAA',
+      target: 'Anak Usia Balita s/d Sekolah Dasar',
+      color: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
+      badge: '3. COC Kidz (Sekolah Minggu)',
     },
     {
       category: 'hana-komsel',
@@ -55,7 +55,7 @@ export default function ScheduleSection() {
       location: 'Gedung Gereja & Rumah Jemaat',
       target: 'Kaum Wanita & Komunitas Sel Keluarga',
       color: 'border-pink-500 bg-pink-50/40 dark:bg-pink-950/20',
-      badge: 'Persekutuan Komunitas',
+      badge: '4. Hana & Komsel Ekklesia',
     },
   ];
 

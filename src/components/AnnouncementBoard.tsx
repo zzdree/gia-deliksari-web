@@ -61,7 +61,7 @@ export default function AnnouncementBoard() {
         };
       case 'hana':
         return {
-          label: 'Hana Fellowship',
+          label: 'Hana & Komsel Ekklesia',
           color: 'bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-300 border-pink-300 dark:border-pink-800',
         };
       case 'general':
@@ -86,7 +86,7 @@ export default function AnnouncementBoard() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
               <Bell className="w-3.5 h-3.5" />
-              <span>Papan Warta Jemaat</span>
+              <span>Warta Jemaat & Informasi</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Papan Informasi & Pengumuman Terkini
@@ -152,10 +152,10 @@ export default function AnnouncementBoard() {
               className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
               <option value="all">Semua Kategori Pelayanan</option>
-              <option value="general">Ibadah Raya / Umum</option>
-              <option value="youth">Grow Generation (Youth)</option>
-              <option value="kidz">COC Kidz (Sekolah Minggu)</option>
-              <option value="hana">Hana Fellowship (Wanita)</option>
+              <option value="general">1. Ibadah Raya (General)</option>
+              <option value="youth">2. Grow Generation (Youth)</option>
+              <option value="kidz">3. COC Kidz (Sekolah Minggu)</option>
+              <option value="hana">4. Hana & Komsel Ekklesia</option>
             </select>
           </div>
         </div>

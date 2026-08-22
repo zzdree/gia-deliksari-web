@@ -64,15 +64,15 @@ export default function MinistriesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Pilar Ibadah & Komunitas Jemaat</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-black uppercase tracking-wider shadow-sm">
+            <span className="text-amber-600 dark:text-amber-400 font-serif text-sm">✝</span>
+            <span>4 Komunitas Ibadah & Pelayanan (General • Youth • Kidz • Hana)</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Pelayanan Berkelanjutan untuk Setiap Generasi
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg">
-            Temukan wadah bertumbuh yang tepat untuk Anda dan seluruh keluarga di GIA Deliksari Semarang.
+            Temukan wadah bertumbuh yang tepat untuk Anda dan seluruh keluarga di GIA Deliksari Semarang: Ibadah Raya, Grow Generation Youth, COC Kidz, serta Persekutuan Wanita Hana & Komsel Ekklesia.
           </p>
         </div>
 

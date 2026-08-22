@@ -730,7 +730,7 @@ export default function AdminPage() {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
-                  4. Hana Fellowship (Wanita)
+                  4. Hana & Komsel (Komunitas)
                 </button>
               </div>
 
