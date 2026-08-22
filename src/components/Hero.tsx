@@ -104,10 +104,10 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 
                 {/* Floating pill badge */}
-                <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-white flex items-center justify-between">
+                <div className="absolute bottom-4 left-4 right-4 p-3.5 sm:p-4 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/15 text-white flex items-center justify-between shadow-lg">
                   <div>
                     <p className="text-xs font-semibold text-amber-400">Ibadah Raya Minggu</p>
-                    <p className="text-sm font-bold">Pkl 07.00 WIB &bull; DS Worship</p>
+                    <p className="text-xs sm:text-sm font-bold text-white">09.00 - 11.00 WIB &bull; DS Worship</p>
                   </div>
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     Live Onsite
@@ -115,14 +115,14 @@ export default function Hero() {
                 </div>
               </div>
 
-              {/* Decorative floating card */}
-              <div className="hidden sm:flex absolute -bottom-6 -left-6 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+              {/* Decorative floating card positioned top-right (no collision) */}
+              <div className="hidden sm:flex absolute -top-5 -right-5 p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl items-center gap-3 z-10">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black text-lg">
                   ✝
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-900 dark:text-white">4 Komunitas Ibadah</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">General, Youth, Kidz, Hana</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">General • Youth • Kidz • Hana</p>
                 </div>
               </div>
 
