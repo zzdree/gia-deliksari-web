@@ -1,67 +1,45 @@
-# Design System: GIA Deliksari Web Platform
-**Project ID:** `gia-deliksari-web-2026`  
-**Aesthetic Direction:** *Contemporary Sanctuary & Digital Hospitality*  
-**DFII Score:** 14/15 (Aesthetic Impact: 5, Context Fit: 5, Implementation Feasibility: 5, Performance Safety: 5, Consistency Risk: 1)  
-**Repository:** [https://github.com/zzdree/gia-deliksari-web](https://github.com/zzdree/gia-deliksari-web)  
-**Live Production URL:** [https://gia-deliksari-web.vercel.app](https://gia-deliksari-web.vercel.app)  
+# DESIGN SYSTEM - GIA DELIKSARI SEMARANG v3.0.0
+**Arah Desain: Warm Minimalist & Scandinavian Clean**
+
+## 1. Suasana & Prinsip Visual
+- **Serenity & Warmth**: Nuansa teduh, hangat, dan damai seperti rumah keluarga Allah.
+- **Editorial Whitespace**: Spasi lapang yang memberikan ruang bernapas pada konten (generous padding `py-20` to `py-28`, `gap-8` to `gap-12`).
+- **Organic Earth Tones**: Palet warna alami terinspirasi dari alam (ivory linen, oatmeal, sage green, terracotta, warm clay, charcoal).
+- **Refined Geometry**: Sudut melengkung lembut (`rounded-2xl`, `rounded-[2rem]`), border halus (`border-[#E8E2D8]` / `border-[#2D312E]`), tanpa warna neon atau gradient agresif.
+
+## 2. Palet Warna Semantik (Earth-Tone Tokens)
+
+### 2.1 Base Canvas & Surface
+- **Canvas Light**: `#FAF8F5` (Warm Cream / Ivory Linen)
+- **Canvas Light Surface (Card)**: `#FFFFFF` (Pure Linen) dengan border `#EBE5DC`
+- **Canvas Dark**: `#141715` (Deep Warm Charcoal)
+- **Canvas Dark Surface (Card)**: `#1B201D` (Muted Pine Dark) dengan border `#2A302C`
+
+### 2.2 Brand & Accent Colors
+- **Primary Sage Green**: `#44634D` (Hover: `#36503E`, Light tint: `#EBF1EC`) — *Ketenangan, Pertumbuhan Rohani, Kehidupan*
+- **Warm Terracotta**: `#C27338` (Hover: `#A9602A`, Light tint: `#FAEEE5`) — *Kehangatan Kasih, Generasi Muda*
+- **Honey Ochre**: `#C89434` (Hover: `#AF7F26`, Light tint: `#FBF4E7`) — *Keceriaan Anak-Anak COC Kidz*
+- **Rose Clay**: `#B35667` (Hover: `#9B4454`, Light tint: `#FAECF0`) — *Persekutuan Wanita Hana & Kasih Persaudaraan*
+- **Deep Forest Slate**: `#1B241E` (Teks Utama Light Mode)
+- **Soft Muted Sage**: `#5F6B63` (Teks Sekunder Light Mode)
+
+## 3. Tipografi
+- **Headline Display**: High-contrast, elegant modern sans (`font-sans font-extrabold tracking-tight`) dengan sentuhan editorial.
+- **Body Text**: Sangat mudah dibaca, line-height lega (`leading-relaxed`), kontras terjaga sesuai standar WCAG AAA.
+- **Badges & Pills**: `rounded-full text-xs font-bold tracking-wide uppercase px-3.5 py-1.5`.
+
+## 4. Komponen & Micro-Interactions
+- **Buttons**:
+  - Primary Action: Background `#44634D` (Sage Green) dengan teks putih, `rounded-2xl`, shadow halus `shadow-sm hover:shadow-md hover:scale-[1.01]`.
+  - Secondary Action: Border `#D8D1C5` (Linen), background `white/80` (Dark: `#1B201D`), hover: `bg-[#F0EBE3]`.
+  - Terracotta Highlight: Background `#C27338` untuk CTA penting / sambutan.
+- **Card Containers**:
+  - `rounded-[2rem]` dengan border halus 1px dan soft shadow `shadow-[0_4px_20px_rgba(0,0,0,0.03)]`.
+- **Badges**:
+  - Sage badge untuk identitas umum
+  - Terracotta badge untuk Youth
+  - Honey badge untuk Kidz
+  - Rose badge untuk Hana & Komsel
 
 ---
-
-## 1. Visual Theme & Atmosphere
-Desain web GIA Deliksari v2.0 dirancang dengan inspirasi gereja modern terkemuka (GMS, JPCC, Hillsong) yang mengedepankan **kehangatan rohani, martabat arsitektural, dan keterbukaan bagi setiap generasi**.
-
-- **Mood & Atmosphere**: *Warm, Reverent, Dynamic, and Hospitable*.
-- **Visual Thesis**: Perpaduan kanvas obsidian berkedalaman (*Deep Slate Obsidian*) dengan aksen emas hangat (*Radiant Amber Gold*) dan pendaran halus kristal (*Frosted Glassmorphism*).
-- **Differentiation Anchor**: Kartu floating identitas `✝ 4 Komunitas Ibadah`, countdown banner ibadah minggu berikutnya, dan hub keramahan jemaat baru (*"Baru Pertama Kali di Sini?"*).
-
----
-
-## 2. Color Palette & Semantic Roles
-
-### 2.1. Core System Palette
-| Descriptive Name | Hex Code | Functional Role |
-|---|---|---|
-| **Radiant Amber Gold** | `#F59E0B` (`amber-500`) | Primary CTA, highlight kata kunci, active states, priority badges |
-| **Deep Warm Amber** | `#D97706` (`amber-600`) | Hover state tombol utama, border aksen terang |
-| **Glow Amber Soft** | `#FEF3C7` (`amber-100`) | Background badge terang, aksen teks gelap |
-| **Deep Obsidian Dark** | `#090D16` | Background kanvas dasar pada Dark Mode |
-| **Dark Slate Surface** | `#0F172A` (`slate-900`) | Background kartu, modul form, dan container gelap |
-| **Elevated Glass Card** | `#1E293B` (`slate-800/80`) | Surface elevated dengan backdrop blur |
-| **Pure Ceramic Light** | `#F8FAFC` (`slate-50`) | Canvas background pada Light Mode |
-| **Clean White Surface** | `#FFFFFF` | Kontainer kartu dan modal pada Light Mode |
-| **Luminous Emerald** | `#10B981` (`emerald-500`) | Status aktif `Live Onsite`, indikator jadwal berjalan |
-| **Sacred Indigo** | `#6366F1` (`indigo-500`) | Aksen pelayanan generasi muda (Youth) |
-| **Warm Rose** | `#F43F5E` (`rose-500`) | Aksen pelayanan Hana & Komsel |
-
----
-
-## 3. Typography Rules
-- **Display Headings**: `system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif`  
-  - H1 Hero: `text-4xl sm:text-6xl font-black tracking-tight leading-[1.1]`
-  - H2 Section: `text-3xl sm:text-4xl font-extrabold tracking-tight`
-  - H3 Card Title: `text-xl font-bold tracking-tight`
-- **Body & Subtitles**: `text-base sm:text-lg font-normal leading-relaxed text-slate-600 dark:text-slate-300`
-- **Micro-Copy & Badges**: `text-xs font-black uppercase tracking-widest`
-
----
-
-## 4. Component Stylings & Geometry
-
-* **Buttons (Primary CTA)**: Generously rounded corners (`rounded-2xl` / `rounded-full`), amber gradient fill (`from-amber-500 to-amber-600`), high-contrast white/black text, soft glow shadow (`shadow-amber-500/25`), subtle hover scale (`hover:scale-[1.02] active:scale-[0.98]`).
-* **Glass Cards & Containers**: Rounded 24px (`rounded-3xl`), border `1px` translucent (`border-slate-200/80 dark:border-white/10`), backdrop blur (`backdrop-blur-xl`), deep diffused elevation shadow.
-* **Badges & Pills**: Pill-shaped (`rounded-full`), padded (`px-3.5 py-1.5`), font-bold `text-xs`, subtle border outline.
-* **Form Controls**: Crisp borders (`rounded-xl border-slate-200 dark:border-slate-700`), focused ring `focus:ring-2 focus:ring-amber-500`, smooth transitions.
-
----
-
-## 5. Layout & Spatial Composition
-* **Whitespace & Rhythm**: Generous vertical section padding (`py-20 sm:py-28`) for breathing room.
-* **Grid Hierarchy**: 12-column responsive layout transitioning gracefully from 1-column on mobile to 2/3/4-columns on desktop.
-* **Controlled Elevation**: Negative z-index ambient gradients (`blur-[120px]`) behind sections to create atmospheric depth without visual clutter.
-
----
-
-## 6. Live Routes Reference
-* 🌐 **Public Landing**: [https://gia-deliksari-web.vercel.app](https://gia-deliksari-web.vercel.app)
-* 🛡️ **Admin Portal**: [https://gia-deliksari-web.vercel.app/admin](https://gia-deliksari-web.vercel.app/admin)
-* 📦 **GitHub Repository**: [https://github.com/zzdree/gia-deliksari-web](https://github.com/zzdree/gia-deliksari-web)
+*GIA Deliksari — Warm Minimalist Scandinavian Design System 2026*

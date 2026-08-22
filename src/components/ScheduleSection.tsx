@@ -24,7 +24,8 @@ export default function ScheduleSection() {
       time: '09.00 - 11.00 WIB',
       location: 'Ruang Utama Sanctuary GIA Deliksari',
       target: 'Seluruh Keluarga & Jemaat Umum',
-      color: 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
+      badgeColor: 'bg-[#EBF1EC] text-[#44634D] border-[#D1E0D5] dark:bg-[#202923] dark:text-[#7EA88A] dark:border-[#2C3B31]',
+      borderAccent: 'border-[#44634D]/30',
       badge: '1. Ibadah Raya (General)',
     },
     {
@@ -34,7 +35,8 @@ export default function ScheduleSection() {
       time: '18.00 - 20.00 WIB',
       location: 'Youth Hall GIA Deliksari',
       target: 'Remaja, Pemuda & Mahasiswa',
-      color: 'border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20',
+      badgeColor: 'bg-[#FAEEE5] text-[#C27338] border-[#ECD1C0] dark:bg-[#2A201A] dark:text-[#E8A576] dark:border-[#4A3427]',
+      borderAccent: 'border-[#C27338]/30',
       badge: '2. Grow Generation (Youth)',
     },
     {
@@ -44,7 +46,8 @@ export default function ScheduleSection() {
       time: '09.30 - 10.30 WIB',
       location: 'Ruang Kelas Anak KAA',
       target: 'Anak Usia Balita s/d Sekolah Dasar',
-      color: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
+      badgeColor: 'bg-[#FBF4E7] text-[#C89434] border-[#F1DEC0] dark:bg-[#2B2317] dark:text-[#E2B35B] dark:border-[#423421]',
+      borderAccent: 'border-[#C89434]/30',
       badge: '3. COC Kidz (Sekolah Minggu)',
     },
     {
@@ -54,7 +57,8 @@ export default function ScheduleSection() {
       time: 'Hana: 18.00 - 20.00 | Komsel: 18.30 - 20.00 WIB',
       location: 'Gedung Gereja & Rumah Jemaat',
       target: 'Kaum Wanita & Komunitas Sel Keluarga',
-      color: 'border-pink-500 bg-pink-50/40 dark:bg-pink-950/20',
+      badgeColor: 'bg-[#FAECF0] text-[#B35667] border-[#EFCAD2] dark:bg-[#2B1B20] dark:text-[#DF8596] dark:border-[#4A2631]',
+      borderAccent: 'border-[#B35667]/30',
       badge: '4. Hana & Komsel Ekklesia',
     },
   ];
@@ -66,7 +70,7 @@ export default function ScheduleSection() {
       time: 'Sesuai Jadwal Kunjungan',
       desc: 'Pelayanan doa, penguatan, dan kunjungan kasih oleh Tim Pastoral ke kediaman jemaat.',
       icon: HeartHandshake,
-      color: 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60',
+      color: 'text-[#44634D] dark:text-[#7EA88A] bg-[#EBF1EC] dark:bg-[#202923] border-[#D1E0D5] dark:border-[#2C3B31]',
     },
     {
       title: 'Latihan Musik Umum & Pembekalan Pelayan',
@@ -74,7 +78,7 @@ export default function ScheduleSection() {
       time: 'Jam Fleksibel (Sebelum Youth)',
       desc: 'Persiapan rohani dan teknis bagi seluruh musisi, singer, WL, dan tim multimedia sebelum ibadah.',
       icon: Music,
-      color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-950/60',
+      color: 'text-[#C27338] dark:text-[#E8A576] bg-[#FAEEE5] dark:bg-[#2A201A] border-[#ECD1C0] dark:border-[#4A3427]',
     },
     {
       title: 'Rotasi Komsel & Wanita Hana (4 Minggu/Bulan)',
@@ -82,23 +86,24 @@ export default function ScheduleSection() {
       time: '1 Minggu Hana, 1 Minggu Komsel',
       desc: 'Membangun keintiman persekutuan selang-seling setiap minggu agar seluruh jemaat terayomi.',
       icon: RefreshCw,
-      color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60',
+      color: 'text-[#C89434] dark:text-[#E2B35B] bg-[#FBF4E7] dark:bg-[#2B2317] border-[#F1DEC0] dark:border-[#423421]',
     },
   ];
 
   return (
-    <section id="jadwal" className="py-20 transition-colors">
+    <section id="jadwal" className="py-24 bg-[#FAF8F5] dark:bg-[#141715] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF1EC] dark:bg-[#202923] border border-[#D1E0D5] dark:border-[#2C3B31] text-[#44634D] dark:text-[#7EA88A] text-xs font-bold uppercase tracking-wider">
             <Clock className="w-3.5 h-3.5" />
             <span>Jadwal & Agenda Ibadah</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] tracking-tight">
             Jadwal Ibadah & Pelayanan Mingguan
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg">
+          <p className="text-[#5F6B63] dark:text-[#9DAAA0] text-base sm:text-lg leading-relaxed">
             Mari bertumbuh bersama dalam persekutuan doa, pujian penyembahan, dan pengajaran firman Tuhan di GIA Deliksari Semarang.
           </p>
         </div>
@@ -108,32 +113,32 @@ export default function ScheduleSection() {
           {mainSchedules.map((item) => (
             <div
               key={item.title}
-              className={`p-6 sm:p-8 rounded-3xl border-2 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-all ${item.color}`}
+              className={`p-7 sm:p-9 rounded-[2rem] border bg-white dark:bg-[#1B201D] shadow-sm hover:shadow-md transition-all ${item.borderAccent}`}
             >
               <div className="flex items-center justify-between gap-2 mb-4">
-                <span className="px-3 py-1 rounded-lg text-xs font-extrabold uppercase tracking-wide bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950">
+                <span className={`px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wide border ${item.badgeColor}`}>
                   {item.badge}
                 </span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold text-[#6B7870] dark:text-[#9DAAA0]">
                   {item.target}
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+              <h3 className="text-2xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] mb-4">
                 {item.title}
               </h3>
 
-              <div className="space-y-2.5 text-sm">
-                <div className="flex items-center gap-3 text-slate-700 dark:text-slate-200">
-                  <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3 text-[#3D4741] dark:text-[#C5CDC7]">
+                  <Calendar className="w-4 h-4 text-[#44634D] dark:text-[#7EA88A] shrink-0" />
                   <span className="font-semibold">{item.day}</span>
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 dark:text-slate-200">
-                  <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="font-bold text-amber-600 dark:text-amber-400 text-base">{item.time}</span>
+                <div className="flex items-center gap-3 text-[#1E2320] dark:text-white">
+                  <Clock className="w-4 h-4 text-[#C27338] shrink-0" />
+                  <span className="font-bold text-[#C27338] dark:text-[#D9894E] text-base">{item.time}</span>
                 </div>
-                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-3 text-[#5F6B63] dark:text-[#9DAAA0]">
+                  <MapPin className="w-4 h-4 text-[#7A877E] shrink-0" />
                   <span>{item.location}</span>
                 </div>
               </div>
@@ -141,31 +146,44 @@ export default function ScheduleSection() {
           ))}
         </div>
 
-        {/* Weekly Regular Ministry Agenda */}
-        <div className="mb-16">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 text-center">
-            Agenda Pelayanan & Pembinaan Rutin
-          </h3>
+        {/* Weekly Activities Highlights */}
+        <div className="space-y-6">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-[#1E2320] dark:text-[#EDEAE4]">
+              Aktivitas Pelayanan Sepekan
+            </h3>
+            <p className="text-sm text-[#5F6B63] dark:text-[#9DAAA0] mt-1">
+              Komitmen pembinaan rohani dan penggembalaan jemaat setiap minggu
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {weeklyActivities.map((act) => {
               const Icon = act.icon;
               return (
                 <div
                   key={act.title}
-                  className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-3"
+                  className="p-7 rounded-[2rem] bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] shadow-sm space-y-4"
                 >
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${act.color}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                      {act.day} • {act.time}
+                  <div className="flex items-center justify-between">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${act.color}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold text-[#6B7870] dark:text-[#9DAAA0]">
+                      {act.day}
                     </span>
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-bold text-[#1E2320] dark:text-[#EDEAE4]">
                       {act.title}
                     </h4>
+                    <p className="text-xs font-semibold text-[#C27338] dark:text-[#D9894E] mt-1">
+                      {act.time}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+
+                  <p className="text-xs sm:text-sm text-[#5F6B63] dark:text-[#9DAAA0] leading-relaxed">
                     {act.desc}
                   </p>
                 </div>
@@ -174,45 +192,24 @@ export default function ScheduleSection() {
           </div>
         </div>
 
-        {/* Servant Roster Preview */}
+        {/* Dynamic Servant Roster Highlight */}
         {roster.length > 0 && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white dark:bg-slate-800/90 border border-slate-800 dark:border-slate-700 shadow-xl">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800 dark:border-slate-700">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                  <Users className="w-4 h-4" />
-                  <span>Jadwal Pelayan Bertugas Minggu Ini</span>
-                </div>
-                <h4 className="text-xl sm:text-2xl font-bold">
-                  Petugas Pelayanan Ibadah Raya
-                </h4>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
-                ✓ Roster Terkonfirmasi
-              </span>
+          <div className="mt-16 p-8 rounded-[2.5rem] bg-[#F5F1E9]/60 dark:bg-[#181C19]/60 border border-[#E5DDD0] dark:border-[#2A312B]">
+            <div className="flex items-center gap-3 mb-6">
+              <Users className="w-5 h-5 text-[#44634D] dark:text-[#7EA88A]" />
+              <h4 className="text-lg font-bold text-[#1E2320] dark:text-[#EDEAE4]">
+                Jadwal Pelayan Ibadah Minggu Ini
+              </h4>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {roster.slice(0, 4).map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 rounded-2xl bg-slate-800/80 dark:bg-slate-900/80 border border-slate-700 space-y-1.5"
-                >
-                  <div className="text-xs font-semibold text-amber-400">
+                <div key={item.id} className="p-4 rounded-2xl bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] space-y-1">
+                  <span className="text-[11px] font-bold text-[#C27338] dark:text-[#D9894E] uppercase">
                     {item.role}
-                  </div>
-                  <div className="font-bold text-base text-white">
-                    {item.servantName}
-                  </div>
-                  {item.notes && (
-                    <div className="text-xs text-slate-400">
-                      {item.notes}
-                    </div>
-                  )}
-                  <div className="pt-2 flex items-center gap-1.5 text-[11px] text-emerald-400">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Tersedia & Siap Melayani</span>
-                  </div>
+                  </span>
+                  <p className="font-bold text-sm text-[#1E2320] dark:text-[#EDEAE4]">{item.servantName}</p>
+                  <p className="text-xs text-[#6B7870] dark:text-[#8E9B92]">{item.serviceDate}</p>
                 </div>
               ))}
             </div>

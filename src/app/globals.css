@@ -3,13 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  --background: #FAF8F5;
+  --foreground: #1E2320;
+  --card-bg: #FFFFFF;
+  --card-border: #EBE5DC;
+  --sage-primary: #44634D;
+  --terracotta: #C27338;
 }
 
 .dark {
-  --background: #020617;
-  --foreground: #f8fafc;
+  --background: #141715;
+  --foreground: #EDEAE4;
+  --card-bg: #1B201D;
+  --card-border: #2A302C;
+  --sage-primary: #5C8368;
+  --terracotta: #D9894E;
 }
 
 html {
@@ -20,16 +28,18 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.025em;
 }
 
-/* Custom scrollbar for modern aesthetics */
+/* Refined Scandinavian Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -37,14 +47,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.4);
+  background: rgba(100, 116, 105, 0.25);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.5);
+  background: rgba(160, 180, 168, 0.25);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.7);
+  background: rgba(100, 116, 105, 0.45);
 }

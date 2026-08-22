@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
-import { Clock, ArrowUpRight, Users } from 'lucide-react';
+import { Clock, ArrowUpRight, Sparkles } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 
 export default function MinistriesSection() {
@@ -16,7 +18,8 @@ export default function MinistriesSection() {
       igUrl: 'https://www.instagram.com/giadeliksari/',
       image: '/images/ministry-general.jpg',
       badgeColor:
-        'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800',
+        'bg-[#EBF1EC] text-[#44634D] border-[#D1E0D5] dark:bg-[#202923] dark:text-[#7EA88A] dark:border-[#2C3B31]',
+      accentBg: 'hover:border-[#44634D]/40',
     },
     {
       id: 'youth',
@@ -29,7 +32,8 @@ export default function MinistriesSection() {
       igUrl: 'https://www.instagram.com/growgeneration_/',
       image: '/images/ministry-youth.jpg',
       badgeColor:
-        'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800',
+        'bg-[#FAEEE5] text-[#C27338] border-[#ECD1C0] dark:bg-[#2A201A] dark:text-[#E8A576] dark:border-[#4A3427]',
+      accentBg: 'hover:border-[#C27338]/40',
     },
     {
       id: 'kidz',
@@ -42,7 +46,8 @@ export default function MinistriesSection() {
       igUrl: 'https://www.instagram.com/cockidz/',
       image: '/images/ministry-kidz.jpg',
       badgeColor:
-        'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800',
+        'bg-[#FBF4E7] text-[#C89434] border-[#F1DEC0] dark:bg-[#2B2317] dark:text-[#E2B35B] dark:border-[#423421]',
+      accentBg: 'hover:border-[#C89434]/40',
     },
     {
       id: 'hana-komsel',
@@ -55,23 +60,25 @@ export default function MinistriesSection() {
       igUrl: 'https://www.instagram.com/giadeliksari/',
       image: '/images/ministry-hana.jpg',
       badgeColor:
-        'bg-pink-100 text-pink-800 border-pink-300 dark:bg-pink-950/80 dark:text-pink-300 dark:border-pink-800',
+        'bg-[#FAECF0] text-[#B35667] border-[#EFCAD2] dark:bg-[#2B1B20] dark:text-[#DF8596] dark:border-[#4A2631]',
+      accentBg: 'hover:border-[#B35667]/40',
     },
   ];
 
   return (
-    <section id="pelayanan" className="py-20 transition-colors">
+    <section id="pelayanan" className="py-24 bg-[#F5F1E9]/40 dark:bg-[#181C19]/40 border-y border-[#EBE5DC] dark:border-[#2A302C] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-black uppercase tracking-wider shadow-sm">
-            <span className="text-amber-600 dark:text-amber-400 font-serif text-sm">✝</span>
-            <span>4 Komunitas Ibadah & Pelayanan (General • Youth • Kidz • Hana)</span>
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF1EC] dark:bg-[#202923] border border-[#D1E0D5] dark:border-[#2C3B31] text-[#44634D] dark:text-[#7EA88A] text-xs font-bold uppercase tracking-wider shadow-sm">
+            <span className="font-serif text-sm">✝</span>
+            <span>4 Komunitas Ibadah & Pelayanan</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] tracking-tight">
             Pelayanan Berkelanjutan untuk Setiap Generasi
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg">
+          <p className="text-[#5F6B63] dark:text-[#9DAAA0] text-base sm:text-lg leading-relaxed">
             Temukan wadah bertumbuh yang tepat untuk Anda dan seluruh keluarga di GIA Deliksari Semarang: Ibadah Raya, Grow Generation Youth, COC Kidz, serta Persekutuan Wanita Hana & Komsel Ekklesia.
           </p>
         </div>
@@ -81,19 +88,19 @@ export default function MinistriesSection() {
           {ministries.map((item) => (
             <div
               key={item.id}
-              className="group flex flex-col rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              className={`group flex flex-col rounded-[2rem] bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${item.accentBg}`}
             >
               {/* Image Preview */}
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#EBE5DC] dark:bg-[#202522]">
                 <Image
                   src={item.image}
                   alt={item.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141715]/70 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3">
-                  <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm ${item.badgeColor}`}>
+                  <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border shadow-xs ${item.badgeColor}`}>
                     {item.categoryTag}
                   </span>
                 </div>
@@ -101,36 +108,47 @@ export default function MinistriesSection() {
 
               {/* Card Body */}
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                <div className="space-y-2.5">
+                  <h3 className="text-lg font-bold text-[#1E2320] dark:text-[#EDEAE4] group-hover:text-[#44634D] dark:group-hover:text-[#7EA88A] transition-colors">
                     {item.name}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#5F6B63] dark:text-[#9DAAA0] leading-relaxed">
                     {item.description}
                   </p>
                 </div>
 
-                {/* Footer Info */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
-                    <Clock className="w-3.5 h-3.5" />
+                {/* Card Footer: Schedule & Instagram */}
+                <div className="pt-4 border-t border-[#EAE3D8] dark:border-[#262D28] space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#4A544E] dark:text-[#C5CDC7]">
+                    <Clock className="w-3.5 h-3.5 text-[#C27338] shrink-0" />
                     <span>{item.schedule}</span>
                   </div>
 
-                  <a
-                    href={item.igUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 font-medium transition-colors"
-                  >
-                    <span>{item.igHandle}</span>
-                    <ArrowUpRight className="w-3 h-3" />
-                  </a>
+                  <div className="flex items-center justify-between pt-1">
+                    <a
+                      href={item.igUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5F6B63] dark:text-[#9DAAA0] hover:text-[#C27338] dark:hover:text-[#D9894E] transition-colors"
+                    >
+                      <InstagramIcon className="w-3.5 h-3.5 text-[#C27338]" />
+                      <span>{item.igHandle}</span>
+                    </a>
+
+                    <a
+                      href="#layanan"
+                      className="p-1.5 rounded-lg bg-[#FAF8F5] dark:bg-[#232924] text-[#5F6B63] dark:text-[#9DAAA0] group-hover:text-[#44634D] dark:group-hover:text-[#7EA88A] group-hover:bg-[#EBF1EC] dark:group-hover:bg-[#202923] transition-colors"
+                      title="Daftar Pelayanan"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

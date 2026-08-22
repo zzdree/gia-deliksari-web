@@ -15,8 +15,11 @@ import Footer from '@/components/Footer';
 
 export default function PublicPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#141715] text-[#1E2320] dark:text-[#EDEAE4] transition-colors">
+      {/* Top Sticky Header */}
       <Navbar />
+
+      {/* Main Page Flow */}
       <main className="flex-1">
         <Hero />
         <HospitalitySection />
@@ -30,6 +33,8 @@ export default function PublicPage() {
         <GallerySection />
         <LocationContactSection />
       </main>
+
+      {/* Footer */}
       <Footer />
     </div>
   );

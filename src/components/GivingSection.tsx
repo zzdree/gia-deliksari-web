@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, Copy, Check, QrCode, ShieldCheck, MessageCircle, Landmark, Sparkles } from 'lucide-react';
+import { Heart, Copy, Check, ShieldCheck, Landmark } from 'lucide-react';
 import { WhatsAppIcon } from './Icons';
 
 export default function GivingSection() {
@@ -13,24 +13,24 @@ export default function GivingSection() {
       accountNumber: '246-098-7711',
       accountName: 'GIA DELIKSARI SEMARANG',
       purpose: 'Persembahan Umum, Perpuluhan & Pembangunan',
-      color: 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/20',
       badge: 'Rekening Utama',
+      badgeColor: 'bg-[#EBF1EC] text-[#44634D] border-[#D1E0D5] dark:bg-[#202923] dark:text-[#7EA88A] dark:border-[#2C3B31]',
     },
     {
       bankName: 'Bank Mandiri',
       accountNumber: '136-00-1928374-1',
       accountName: 'GEREJA ISA ALMASIH DELIKSARI',
       purpose: 'Diakonia Kasih, Misi & Operasional Gereja',
-      color: 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
       badge: 'Diakonia & Misi',
+      badgeColor: 'bg-[#FAEEE5] text-[#C27338] border-[#ECD1C0] dark:bg-[#2A201A] dark:text-[#E8A576] dark:border-[#4A3427]',
     },
     {
       bankName: 'BRI (Bank Rakyat Indonesia)',
       accountNumber: '0341-01-002938-53-0',
       accountName: 'GIA DELIKSARI',
       purpose: 'Pelayanan Remaja, Pemuda & Sekolah Minggu',
-      color: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
       badge: 'Generasi Muda',
+      badgeColor: 'bg-[#FBF4E7] text-[#C89434] border-[#F1DEC0] dark:bg-[#2B2317] dark:text-[#E2B35B] dark:border-[#423421]',
     },
   ];
 
@@ -46,121 +46,112 @@ export default function GivingSection() {
     'https://api.whatsapp.com/send?phone=6281234567890&text=Syalom%20Sekretariat%20GIA%20Deliksari,%20saya%20ingin%20mengonfirmasi%20transfer%20persembahan/perpuluhan.';
 
   return (
-    <section id="persembahan" className="py-20 bg-slate-50 dark:bg-slate-900/40 transition-colors">
+    <section id="persembahan" className="py-24 bg-[#FAF8F5] dark:bg-[#141715] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <Heart className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF1EC] dark:bg-[#202923] border border-[#D1E0D5] dark:border-[#2C3B31] text-[#44634D] dark:text-[#7EA88A] text-xs font-bold uppercase tracking-wider">
+            <Heart className="w-3.5 h-3.5 fill-[#44634D] text-[#44634D]" />
             <span>Persembahan & Perpuluhan</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] tracking-tight">
             Mendukung Pekerjaan & Pelayanan Tuhan
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg">
-            Terima kasih atas kesetiaan dan kemurahan hati Anda dalam menabur bagi kemuliaan nama Tuhan melalui GIA Deliksari.
+          <p className="text-[#5F6B63] dark:text-[#9DAAA0] text-base sm:text-lg leading-relaxed">
+            &ldquo;Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan, sebab Allah mengasihi orang yang memberi dengan sukacita.&rdquo; (2 Korintus 9:7)
           </p>
-        </div>
-
-        {/* Bible Verse Banner */}
-        <div className="max-w-4xl mx-auto mb-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 text-center space-y-2">
-          <p className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200 italic leading-relaxed">
-            &ldquo;Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan, sebab Allah mengasihi orang yang memberi dengan sukacita.&rdquo;
-          </p>
-          <div className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-            — 2 Korintus 9:7
-          </div>
         </div>
 
         {/* Bank Accounts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {bankAccounts.map((acc, idx) => (
+          {bankAccounts.map((account, index) => (
             <div
-              key={acc.bankName}
-              className={`p-6 sm:p-8 rounded-3xl border-2 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${acc.color}`}
+              key={account.bankName}
+              className="p-7 rounded-[2rem] bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white dark:bg-slate-700 dark:text-slate-200">
-                    {acc.badge}
+                  <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] dark:bg-[#232924] flex items-center justify-center text-[#44634D] dark:text-[#7EA88A] border border-[#EAE4DB] dark:border-[#303832]">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${account.badgeColor}`}>
+                    {account.badge}
                   </span>
-                  <Landmark className="w-5 h-5 text-slate-400" />
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {acc.bankName}
+                  <h3 className="text-lg font-bold text-[#1E2320] dark:text-[#EDEAE4]">
+                    {account.bankName}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {acc.purpose}
+                  <p className="text-xs text-[#5F6B63] dark:text-[#9DAAA0] mt-1 leading-relaxed">
+                    {account.purpose}
                   </p>
                 </div>
 
                 {/* Account Number Box */}
-                <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 space-y-1">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] dark:bg-[#232924] border border-[#EBE5DC] dark:border-[#2C342E] space-y-1">
+                  <span className="text-[11px] font-semibold text-[#6B7870] dark:text-[#9DAAA0] uppercase tracking-wider block">
                     Nomor Rekening
                   </span>
-                  <div className="font-mono text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-amber-400 tracking-wider">
-                    {acc.accountNumber}
+                  <div className="font-mono text-lg sm:text-xl font-extrabold text-[#1E2320] dark:text-white tracking-wider">
+                    {account.accountNumber}
                   </div>
-                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    a.n. {acc.accountName}
+                  <div className="text-xs font-bold text-[#44634D] dark:text-[#7EA88A]">
+                    a.n. {account.accountName}
                   </div>
                 </div>
               </div>
 
               {/* Copy Button */}
-              <div className="pt-6">
-                <button
-                  onClick={() => handleCopy(acc.accountNumber, idx)}
-                  className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-sm ${
-                    copiedIndex === idx
-                      ? 'bg-emerald-600 text-white shadow-emerald-600/30'
-                      : 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 hover:opacity-90 active:scale-[0.98]'
-                  }`}
-                >
-                  {copiedIndex === idx ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Nomor Rekening Tersalin!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Salin Nomor Rekening</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                onClick={() => handleCopy(account.accountNumber, index)}
+                className={`w-full py-3 px-4 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                  copiedIndex === index
+                    ? 'bg-[#44634D] text-white'
+                    : 'bg-[#FAF8F5] dark:bg-[#232924] hover:bg-[#EFEAE2] dark:hover:bg-[#2C342E] text-[#3D4741] dark:text-[#EDEAE4] border border-[#E0D7C9] dark:border-[#2F3731]'
+                }`}
+              >
+                {copiedIndex === index ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-300" />
+                    <span>Nomor Rekening Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-[#7A877E]" />
+                    <span>Salin Nomor Rekening</span>
+                  </>
+                )}
+              </button>
             </div>
           ))}
         </div>
 
-        {/* Confirmation CTA Card */}
-        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-1 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Transparansi & Akuntabilitas</span>
+        {/* Confirmation Strip */}
+        <div className="p-6 sm:p-8 rounded-[2rem] bg-[#F5F1E9]/60 dark:bg-[#181C19]/60 border border-[#E5DDD0] dark:border-[#2A312B] flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3.5 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-xl bg-[#EBF1EC] dark:bg-[#202923] flex items-center justify-center text-[#44634D] dark:text-[#7EA88A] shrink-0 border border-[#D1E0D5] dark:border-[#2C3B31]">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h4 className="text-xl font-bold text-slate-900 dark:text-white">
-              Konfirmasi Bukti Transfer Persembahan
-            </h4>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Kirimkan bukti transfer untuk pencatatan diakonia atau warta persembahan ke sekretariat gereja.
-            </p>
+            <div>
+              <p className="text-sm font-bold text-[#1E2320] dark:text-[#EDEAE4]">
+                Konfirmasi Persembahan (Opsional)
+              </p>
+              <p className="text-xs text-[#5F6B63] dark:text-[#9DAAA0]">
+                Anda dapat mengirimkan bukti transfer untuk pencatatan persembahan perpuluhan atau pembangunan.
+              </p>
+            </div>
           </div>
 
           <a
             href={whatsappConfirmUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#44634D] hover:bg-[#36503E] text-white text-xs sm:text-sm font-bold shadow-sm shrink-0 transition-all"
           >
-            <WhatsAppIcon className="w-5 h-5" />
-            <span>Konfirmasi via WhatsApp</span>
+            <WhatsAppIcon className="w-4 h-4 text-emerald-300" />
+            <span>Konfirmasi ke WhatsApp</span>
           </a>
         </div>
 
