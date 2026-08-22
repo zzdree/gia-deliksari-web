@@ -14,12 +14,15 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Beranda', href: '/#beranda' },
-    { name: 'Tentang & Gembala', href: '/#tentang' },
+    { name: 'Tentang', href: '/#tentang' },
     { name: 'Pelayanan', href: '/#pelayanan' },
-    { name: 'Warta & Pengumuman', href: '/#warta' },
-    { name: 'Jadwal Ibadah', href: '/#jadwal' },
+    { name: 'Khotbah', href: '/#khotbah' },
+    { name: 'Warta', href: '/#warta' },
+    { name: 'Jadwal', href: '/#jadwal' },
+    { name: 'Layanan', href: '/#layanan' },
+    { name: 'Persembahan', href: '/#persembahan' },
     { name: 'Galeri', href: '/#galeri' },
-    { name: 'Lokasi & Kontak', href: '/#kontak' },
+    { name: 'Kontak', href: '/#kontak' },
   ];
 
   return (

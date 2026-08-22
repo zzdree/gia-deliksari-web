@@ -3,8 +3,11 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import AboutSection from '@/components/AboutSection';
 import MinistriesSection from '@/components/MinistriesSection';
+import SermonsSection from '@/components/SermonsSection';
 import AnnouncementBoard from '@/components/AnnouncementBoard';
 import ScheduleSection from '@/components/ScheduleSection';
+import MinistryRegistrationSection from '@/components/MinistryRegistrationSection';
+import GivingSection from '@/components/GivingSection';
 import GallerySection from '@/components/GallerySection';
 import LocationContactSection from '@/components/LocationContactSection';
 import Footer from '@/components/Footer';
@@ -20,8 +23,11 @@ export default function Home() {
         <Hero />
         <AboutSection />
         <MinistriesSection />
+        <SermonsSection />
         <AnnouncementBoard />
         <ScheduleSection />
+        <MinistryRegistrationSection />
+        <GivingSection />
         <GallerySection />
         <LocationContactSection />
       </main>

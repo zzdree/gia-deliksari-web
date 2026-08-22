@@ -37,12 +37,15 @@ export default function Footer() {
           {/* Quick Links */}
           <div className="space-y-3">
             <h5 className="font-bold text-slate-900 dark:text-white text-sm">Navigasi Cepat</h5>
-            <ul className="space-y-2 text-xs sm:text-sm">
+            <ul className="space-y-1.5 text-xs sm:text-sm">
               <li><a href="#tentang" className="hover:text-amber-600 dark:hover:text-amber-400">Tentang & Gembala</a></li>
-              <li><a href="#pelayanan" className="hover:text-amber-600 dark:hover:text-amber-400">4 Pilar Pelayanan</a></li>
-              <li><a href="#warta" className="hover:text-amber-600 dark:hover:text-amber-400">Papan Warta Jemaat</a></li>
+              <li><a href="#pelayanan" className="hover:text-amber-600 dark:hover:text-amber-400">Pilar Pelayanan</a></li>
+              <li><a href="#khotbah" className="hover:text-amber-600 dark:hover:text-amber-400">Arsip Khotbah</a></li>
+              <li><a href="#warta" className="hover:text-amber-600 dark:hover:text-amber-400">Papan Warta</a></li>
               <li><a href="#jadwal" className="hover:text-amber-600 dark:hover:text-amber-400">Jadwal Ibadah</a></li>
-              <li><a href="#galeri" className="hover:text-amber-600 dark:hover:text-amber-400">Galeri Foto Asli</a></li>
+              <li><a href="#layanan" className="hover:text-amber-600 dark:hover:text-amber-400">Layanan & Doa</a></li>
+              <li><a href="#persembahan" className="hover:text-amber-600 dark:hover:text-amber-400">Persembahan & Perpuluhan</a></li>
+              <li><a href="#galeri" className="hover:text-amber-600 dark:hover:text-amber-400">Galeri Foto</a></li>
             </ul>
           </div>
 
