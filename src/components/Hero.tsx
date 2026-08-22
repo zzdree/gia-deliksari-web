@@ -8,7 +8,7 @@ export default function Hero() {
     process.env.NEXT_PUBLIC_GMAPS_SHARE_URL || 'https://share.google/O7HqL1J615kgxt66v';
 
   return (
-    <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 transition-colors">
+    <section id="beranda" className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 transition-colors">
       {/* Decorative ambient background glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-amber-500/10 dark:bg-amber-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute top-1/3 right-10 w-[400px] h-[300px] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none -z-10" />
