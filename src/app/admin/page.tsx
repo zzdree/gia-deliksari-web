@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Announcement, ServantRoster, InventoryItem, MinistryCategory, InventoryCategory } from '@/types';
@@ -430,8 +431,14 @@ export default function AdminPage() {
         <main className="flex-1 flex items-center justify-center px-4 py-16 sm:py-24">
           <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
             <div className="text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
-                <Lock className="w-7 h-7" />
+              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-amber-500/50 mx-auto shadow-md bg-white">
+                <Image
+                  src="/images/logo.png"
+                  alt="Logo GIA Deliksari"
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                 Admin Authentication

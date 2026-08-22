@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Church, Heart, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { Heart, ShieldCheck } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -11,8 +12,13 @@ export default function Footer() {
           {/* Church Branding */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white">
-                <Church className="w-5 h-5" />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-amber-500/40 bg-white">
+                <Image
+                  src="/images/logo.png"
+                  alt="GIA Deliksari"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
                 <h4 className="font-extrabold text-slate-900 dark:text-white text-lg">
@@ -36,7 +42,7 @@ export default function Footer() {
               <li><a href="#pelayanan" className="hover:text-amber-600 dark:hover:text-amber-400">4 Pilar Pelayanan</a></li>
               <li><a href="#warta" className="hover:text-amber-600 dark:hover:text-amber-400">Papan Warta Jemaat</a></li>
               <li><a href="#jadwal" className="hover:text-amber-600 dark:hover:text-amber-400">Jadwal Ibadah</a></li>
-              <li><a href="#galeri" className="hover:text-amber-600 dark:hover:text-amber-400">Galeri Foto</a></li>
+              <li><a href="#galeri" className="hover:text-amber-600 dark:hover:text-amber-400">Galeri Foto Asli</a></li>
             </ul>
           </div>
 
@@ -59,12 +65,13 @@ export default function Footer() {
 
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <p>© 2026 GIA Deliksari Semarang. Seluruh hak cipta dilindungi undang-undang (*All Rights Reserved*).</p>
-          <p className="flex items-center gap-1">
-            Melayani dengan <Heart className="w-3.5 h-3.5 text-red-500 inline fill-current" /> untuk kemuliaan nama Tuhan.
-          </p>
+        <div className="pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <p>© {new Date().getFullYear()} GIA Deliksari Semarang. All Rights Reserved.</p>
+          <div className="flex items-center gap-1 text-slate-500">
+            <span>Melayani dengan</span>
+            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+            <span>untuk Kemuliaan Nama Tuhan</span>
+          </div>
         </div>
       </div>
     </footer>
