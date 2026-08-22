@@ -196,10 +196,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       </head>
-      <body className="font-sans antialiased min-h-screen bg-[#FAF8F5] text-[#1E2320] dark:bg-[#141715] dark:text-[#EDEAE4] transition-colors duration-200">
+      <body className="font-sans antialiased min-h-screen bg-[#FDFBF7] text-[#1F1617] dark:bg-[#150B0D] dark:text-[#F5EFEB] transition-colors duration-200">
         <a
           href="#beranda"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-[#44634D] text-white font-bold rounded-xl shadow-lg"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white font-bold rounded-xl shadow-lg"
         >
           Lewati ke Konten Utama (Skip to Content)
         </a>

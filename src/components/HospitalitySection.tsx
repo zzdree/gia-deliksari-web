@@ -1,85 +1,104 @@
 'use client';
 
 import React from 'react';
-import { MapPin, Smile, Music, Users, ArrowRight, HeartHandshake, Compass } from 'lucide-react';
+import { 
+  Compass, 
+  MapPin, 
+  Smile, 
+  Users, 
+  Baby, 
+  Heart, 
+  ArrowRight,
+  ExternalLink
+} from 'lucide-react';
 import { WhatsAppIcon } from './Icons';
 
 export default function HospitalitySection() {
-  const gmapsShareUrl =
-    process.env.NEXT_PUBLIC_GMAPS_SHARE_URL || 'https://share.google/O7HqL1J615kgxt66v';
+  const whatsappUrl =
+    'https://api.whatsapp.com/send?phone=6281234567890&text=Syalom%20GIA%20Deliksari,%20saya%20jemaat%20baru%20dan%20ingin%20bertanya%20seputar%20ibadah.';
 
-  const hospitalityGuides = [
+  const steps = [
     {
+      step: '01',
+      title: 'Akses & Parkir Nyaman',
+      desc: 'Lokasi gereja mudah dijangkau di Deliksari Gunungpati dengan area parkir aman untuk motor & mobil.',
       icon: MapPin,
-      title: 'Lokasi & Parkir Nyaman',
-      tag: 'Akses Mudah',
-      color: 'bg-[#EBF1EC] text-[#44634D] dark:bg-[#202923] dark:text-[#7EA88A] border-[#D1E0D5] dark:border-[#2C3B31]',
-      desc: 'Terletak di Deliksari Gunungpati dengan area parkir aman untuk kendaraan roda 2 dan 4 serta diarahkan oleh tim usher.',
+      badge: 'Lokasi Strategis',
+      color: 'bg-[#FDF0F0] text-[#C5222E] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',
     },
     {
+      step: '02',
+      title: 'Penyambutan Penuh Kasih',
+      desc: 'Tim Usher & Welcoming siap menyambut Anda dengan hangat di pintu masuk sanctuary gereja.',
       icon: Smile,
-      title: 'Ibadah Anak (COC Kidz)',
-      tag: 'Sekolah Minggu',
-      color: 'bg-[#FBF4E7] text-[#C89434] dark:bg-[#2B2317] dark:text-[#E2B35B] border-[#F1DEC0] dark:border-[#423421]',
-      desc: 'Kelas Sekolah Minggu (Pukul 09.30 WIB) dengan puji-pujian ceria, cerita Alkitab interaktif, dan kreasi edukatif.',
+      badge: 'Sambutan Hangat',
+      color: 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]',
     },
     {
-      icon: Music,
-      title: 'Pujian & Firman Praktis',
-      tag: 'DS Worship',
-      color: 'bg-[#FAEEE5] text-[#C27338] dark:bg-[#2A201A] dark:text-[#E8A576] border-[#ECD1C0] dark:border-[#4A3427]',
-      desc: 'Wadah praise & worship kontemporer yang hidup dan penyampaian kebenaran Alkitab kontekstual untuk kehidupan sehari-hari.',
+      step: '03',
+      title: 'Ibadah Anak COC Kidz',
+      desc: 'Anak-anak Anda dididik dalam firman Tuhan dengan penuh sukacita di kelas Sekolah Minggu (09.30 WIB).',
+      icon: Baby,
+      badge: 'Ramah Keluarga',
+      color: 'bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72] dark:border-[#57241A]',
     },
     {
+      step: '04',
+      title: 'Komunitas Bertumbuh',
+      desc: 'Bergabung dalam Komsel Ekklesia, Youth Grow Generation, dan Persekutuan Wanita Hana.',
       icon: Users,
-      title: 'Penyambutan Hangat',
-      tag: 'Keluarga Allah',
-      color: 'bg-[#FAECF0] text-[#B35667] dark:bg-[#2B1B20] dark:text-[#DF8596] border-[#EFCAD2] dark:border-[#4A2631]',
-      desc: 'Tim pastoral dan keluarga jemaat siap menyambut Anda dengan sukacita dan mendampingi bila ada pertanyaan.',
+      badge: 'Persekutuan Intim',
+      color: 'bg-[#FDF0F4] text-[#A6264A] border-[#F7C6D5] dark:bg-[#33121E] dark:text-[#EA7FA0] dark:border-[#541D30]',
     },
   ];
 
   return (
-    <section id="kunjungan" className="py-24 bg-[#F5F1E9]/50 dark:bg-[#181C19]/50 border-y border-[#EBE5DC] dark:border-[#2A302C] transition-colors">
+    <section id="kunjungan" className="py-24 bg-[#F7F2E8]/60 dark:bg-[#1A0E10]/60 border-y border-[#EBDDCF] dark:border-[#3A1C20] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF1EC] dark:bg-[#202923] border border-[#D1E0D5] dark:border-[#2C3B31] text-[#44634D] dark:text-[#7EA88A] text-xs font-bold uppercase tracking-wider shadow-sm">
-            <Compass className="w-3.5 h-3.5" />
-            <span>Digital Hospitality &bull; Selamat Datang Jemaat Baru</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
+            <Compass className="w-3.5 h-3.5 text-[#C5222E]" />
+            <span>Panduan Jemaat Baru & Tamu</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1F1617] dark:text-[#F5EFEB] tracking-tight">
             Baru Pertama Kali ke GIA Deliksari?
           </h2>
-          <p className="text-[#5F6B63] dark:text-[#9DAAA0] text-base sm:text-lg leading-relaxed">
-            Kami sangat bersukacita menyambut kehadiran Anda. Berikut beberapa hal penting untuk membantu kunjungan ibadah perdana Anda terasa nyaman seperti di rumah sendiri.
+          <p className="text-[#5A4D4E] dark:text-[#D5C2C4] text-base sm:text-lg leading-relaxed">
+            Kami sangat bergembira menyambut kehadiran Anda. Berikut langkah sederhana untuk menikmati ibadah bersama kami hari Minggu ini.
           </p>
         </div>
 
-        {/* 4 Clean Hospitality Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {hospitalityGuides.map((guide) => {
-            const Icon = guide.icon;
+        {/* 4 Steps Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {steps.map((item) => {
+            const Icon = item.icon;
             return (
               <div
-                key={guide.title}
-                className="p-7 rounded-[2rem] bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+                key={item.step}
+                className="p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-xs ${guide.color}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#FAF8F5] dark:bg-[#232924] border border-[#EAE4DB] dark:border-[#303832] text-[#6B7870] dark:text-[#9DAAA0]">
-                      {guide.tag}
+                    <span className="font-mono text-2xl font-black text-[#C5222E]/40 dark:text-[#E03643]/40">
+                      {item.step}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${item.color}`}>
+                      {item.badge}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-[#1E2320] dark:text-[#EDEAE4]">
-                    {guide.title}
+
+                  <div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center justify-center text-[#C5222E] dark:text-[#E03643]">
+                    <Icon className="w-6 h-6" />
+                  </div>
+
+                  <h3 className="text-lg font-bold text-[#1F1617] dark:text-[#F5EFEB]">
+                    {item.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#5F6B63] dark:text-[#9DAAA0] leading-relaxed">
-                    {guide.desc}
+
+                  <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
+                    {item.desc}
                   </p>
                 </div>
               </div>
@@ -87,39 +106,34 @@ export default function HospitalitySection() {
           })}
         </div>
 
-        {/* Warm Personal Pastoral Greeting Banner */}
-        <div className="rounded-[2.5rem] bg-gradient-to-r from-[#44634D] to-[#36503E] p-8 sm:p-10 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left max-w-xl">
-            <span className="text-xs uppercase font-bold tracking-widest text-[#B8D8C0]">
-              Hubungi Tim Penyambutan Kami
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Ingin Mengetahui Info Ibadah Lebih Lanjut?
+        {/* Banner CTA Box: Sacred Crimson-Maroon Gradient */}
+        <div className="p-8 sm:p-10 rounded-[2.5rem] bg-gradient-to-r from-[#C5222E] via-[#A81722] to-[#80141C] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+              Punya Pertanyaan Sebelum Hadir?
             </h3>
-            <p className="text-sm text-[#D1E5D7] leading-relaxed">
-              Tim pastoral kami siap menjawab pertanyaan seputar lokasi, jadwal persekutuan, maupun permohonan doa jemaat.
+            <p className="text-xs sm:text-sm text-red-100 max-w-xl leading-relaxed">
+              Tim pastoral kami siap membantu menjawab pertanyaan mengenai lokasi, ibadah anak, maupun permohonan doa.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
             <a
-              href="https://wa.me/6281234567890?text=Halo%20GIA%20Deliksari,%20saya%20jemaat%20baru%20dan%20ingin%20info%20ibadah"
+              href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white text-[#334D3A] font-bold text-sm hover:bg-[#F2F7F4] shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="px-6 py-3.5 rounded-2xl bg-white text-[#80141C] hover:bg-[#FDFBF7] font-bold text-xs sm:text-sm shadow-md flex items-center gap-2 transition-transform active:scale-95"
             >
               <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
-              <span>Sapa Tim Pastoral (WA)</span>
+              <span>Chat WhatsApp Pastoral</span>
             </a>
 
             <a
-              href={gmapsShareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-[#5A8267] hover:bg-[#4A6E55] text-white font-bold text-sm border border-white/20 transition-all"
+              href="#kontak"
+              className="px-5 py-3.5 rounded-2xl bg-red-900/50 hover:bg-red-900/70 border border-white/20 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors"
             >
-              <MapPin className="w-4 h-4" />
-              <span>Buka Google Maps</span>
+              <span>Petunjuk Lokasi</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>

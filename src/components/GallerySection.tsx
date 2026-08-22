@@ -2,151 +2,131 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Sparkles, Maximize2, X, ChevronRight, ChevronLeft, Image as ImageIcon } from 'lucide-react';
-import { InstagramIcon } from './Icons';
+import { 
+  Camera, 
+  X, 
+  ChevronLeft, 
+  ChevronRight, 
+  Sparkles,
+  Maximize2
+} from 'lucide-react';
 
 interface GalleryItem {
-  id: number;
-  src: string;
-  alt: string;
-  tag: string;
-  category: 'all' | 'ibadah' | 'worship' | 'youth' | 'komunitas';
+  id: string;
   title: string;
-  desc: string;
+  category: 'ibadah' | 'worship' | 'youth' | 'komunitas';
+  image: string;
+  date: string;
 }
 
 const GALLERY_ITEMS: GalleryItem[] = [
   {
-    id: 1,
-    src: '/images/gallery-1.jpg',
-    alt: 'Pelayanan Pujian & Penyembahan DS Worship',
-    tag: 'Praise & Worship',
+    id: 'gal-1',
+    title: 'Gedung Sanctuary GIA Deliksari Semarang',
+    category: 'ibadah',
+    image: '/images/gallery-1.jpg',
+    date: 'Agustus 2026',
+  },
+  {
+    id: 'gal-2',
+    title: 'Pemberitaan Firman & Penggembalaan Jemaat',
+    category: 'ibadah',
+    image: '/images/gallery-2.jpg',
+    date: 'Agustus 2026',
+  },
+  {
+    id: 'gal-3',
+    title: 'Praise & Worship DS Worship Team',
     category: 'worship',
-    title: 'Pelayanan Musik & DS Worship',
-    desc: 'Tim musik dan puji-pujian yang melayani di hadirat Tuhan dalam setiap ibadah raya.',
+    image: '/images/gallery-3.jpg',
+    date: 'Juli 2026',
   },
   {
-    id: 2,
-    src: '/images/gallery-2.jpg',
-    alt: 'Ibadah Raya & Sakramen Perjamuan Kudus',
-    tag: 'Ibadah Raya',
-    category: 'ibadah',
-    title: 'Ibadah Raya Minggu',
-    desc: 'Suasana khidmat ibadah raya Minggu bersama seluruh jemaat GIA Deliksari.',
-  },
-  {
-    id: 3,
-    src: '/images/gallery-3.jpg',
-    alt: 'Tampak Gedung & Plang GIA Deliksari',
-    tag: 'Fasilitas & Gedung',
+    id: 'gal-4',
+    title: 'Keceriaan Ibadah Anak Sekolah Minggu COC Kidz',
     category: 'komunitas',
-    title: 'Gedung Gereja GIA Deliksari',
-    desc: 'Rumah doa dan persekutuan jemaat di Jl. Kolonel Hadijanto, Deliksari Semarang.',
+    image: '/images/gallery-4.jpg',
+    date: 'Juli 2026',
   },
   {
-    id: 4,
-    src: '/images/gallery-4.jpg',
-    alt: 'Perayaan & Ibadah Spesial GIA Deliksari',
-    tag: 'Ibadah Spesial',
-    category: 'ibadah',
-    title: 'Perayaan & Kebersamaan',
-    desc: 'Momen ucapan syukur dan perayaan hari-hari besar gerejawi jemaat.',
+    id: 'gal-5',
+    title: 'Persekutuan & Doa Bersama Jemaat',
+    category: 'komunitas',
+    image: '/images/gallery-5.jpg',
+    date: 'Juni 2026',
   },
   {
-    id: 5,
-    src: '/images/gallery-5.jpg',
-    alt: 'Pelayanan Firman & Mimbar',
-    tag: 'Pelayanan Mimbar',
-    category: 'ibadah',
-    title: 'Pemberitaan Firman Tuhan',
-    desc: 'Pengajaran firman penggembalaan yang membangun dan memulihkan kehidupan jemaat.',
-  },
-  {
-    id: 6,
-    src: '/images/gallery-6.jpg',
-    alt: 'Persekutuan & Fellowship Pemuda',
-    tag: 'Grow Generation',
+    id: 'gal-6',
+    title: 'Fellowship Pemuda Grow Generation PRBK',
     category: 'youth',
-    title: 'Fellowship Pemuda & Remaja',
-    desc: 'Kebersamaan generasi muda dalam kehangatan komunitas iman dan saling mendoakan.',
+    image: '/images/gallery-6.jpg',
+    date: 'Juni 2026',
   },
 ];
 
 export default function GallerySection() {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'ibadah' | 'worship' | 'youth' | 'komunitas'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'ibadah' | 'worship' | 'youth' | 'komunitas'>('all');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
-  const filteredItems = GALLERY_ITEMS.filter((item) => {
-    if (activeCategory === 'all') return true;
-    return item.category === activeCategory;
-  });
+  const filteredItems = activeFilter === 'all'
+    ? GALLERY_ITEMS
+    : GALLERY_ITEMS.filter((item) => item.category === activeFilter);
 
-  const handlePrev = () => {
-    if (selectedPhotoIndex === null) return;
-    setSelectedPhotoIndex((selectedPhotoIndex - 1 + filteredItems.length) % filteredItems.length);
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedPhotoIndex !== null) {
+      setSelectedPhotoIndex((selectedPhotoIndex - 1 + filteredItems.length) % filteredItems.length);
+    }
   };
 
-  const handleNext = () => {
-    if (selectedPhotoIndex === null) return;
-    setSelectedPhotoIndex((selectedPhotoIndex + 1) % filteredItems.length);
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedPhotoIndex !== null) {
+      setSelectedPhotoIndex((selectedPhotoIndex + 1) % filteredItems.length);
+    }
   };
 
   return (
-    <section id="galeri" className="py-24 bg-[#F5F1E9]/40 dark:bg-[#181C19]/40 border-y border-[#EBE5DC] dark:border-[#2A302C] transition-colors">
+    <section id="galeri" className="py-24 bg-[#FDFBF7] dark:bg-[#150B0D] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF1EC] dark:bg-[#202923] border border-[#D1E0D5] dark:border-[#2C3B31] text-[#44634D] dark:text-[#7EA88A] text-xs font-bold uppercase tracking-wider">
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>Dokumentasi Pelayanan</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
+              <Camera className="w-3.5 h-3.5 text-[#C5222E]" />
+              <span>Dokumentasi Pelayanan & Momen Kebersamaan</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1E2320] dark:text-[#EDEAE4] tracking-tight">
-              Galeri Kegiatan & Momen Kebersamaan
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1F1617] dark:text-[#F5EFEB] tracking-tight">
+              Galeri Sukacita Jemaat
             </h2>
-            <p className="text-[#5F6B63] dark:text-[#9DAAA0] text-base leading-relaxed">
-              Merekam jejak kasih dan penyertaan Tuhan dalam berbagai kegiatan ibadah dan persekutuan jemaat.
+            <p className="text-[#5A4D4E] dark:text-[#D5C2C4] text-base leading-relaxed">
+              Momen-momen indah persekutuan, pujian penyembahan, dan kebersamaan keluarga Allah di GIA Deliksari.
             </p>
           </div>
 
-          <div>
-            <a
-              href="https://www.instagram.com/giadeliksari/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white dark:bg-[#1B201D] border border-[#E0D7C9] dark:border-[#2F3731] hover:bg-[#EFEAE2] dark:hover:bg-[#232A25] text-[#1E2320] dark:text-[#EDEAE4] text-xs sm:text-sm font-bold shadow-sm transition-all"
-            >
-              <InstagramIcon className="w-4 h-4 text-[#C27338]" />
-              <span>Lihat Instagram @giadeliksari</span>
-            </a>
+          {/* Filter Chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: 'all', label: 'Semua Momen' },
+              { id: 'ibadah', label: 'Ibadah' },
+              { id: 'worship', label: 'Worship' },
+              { id: 'youth', label: 'Youth' },
+              { id: 'komunitas', label: 'Komunitas' },
+            ].map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id as any)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  activeFilter === filter.id
+                    ? 'bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white shadow-xs'
+                    : 'bg-white dark:bg-[#221215] text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-[#F7F2E8] dark:hover:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20]'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
           </div>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-10">
-          {[
-            { id: 'all', label: 'Semua Momen' },
-            { id: 'ibadah', label: 'Ibadah Raya' },
-            { id: 'worship', label: 'DS Worship' },
-            { id: 'youth', label: 'Grow Generation' },
-            { id: 'komunitas', label: 'Gedung & Fasilitas' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveCategory(tab.id as any);
-                setSelectedPhotoIndex(null);
-              }}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                activeCategory === tab.id
-                  ? 'bg-[#44634D] text-white shadow-xs'
-                  : 'bg-white dark:bg-[#1B201D] text-[#5F6B63] dark:text-[#C5CDC7] hover:bg-[#EFEAE2] dark:hover:bg-[#232A25] border border-[#E5DDD0] dark:border-[#2A312B]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {/* Gallery Grid */}
@@ -155,35 +135,29 @@ export default function GallerySection() {
             <div
               key={item.id}
               onClick={() => setSelectedPhotoIndex(index)}
-              className="group cursor-pointer rounded-[2rem] bg-white dark:bg-[#1B201D] border border-[#E5DDD0] dark:border-[#2A312B] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              className="group relative aspect-[4/3] rounded-[2rem] overflow-hidden bg-[#F7F2E8] dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md cursor-pointer transition-all"
             >
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#EAE4DB] dark:bg-[#222824]">
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141715]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                  <span className="text-white text-xs font-bold flex items-center gap-1.5 bg-[#141715]/80 px-3 py-1.5 rounded-xl backdrop-blur-sm border border-white/20">
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>Lihat Foto Penuh</span>
-                  </span>
-                </div>
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/90 dark:bg-[#141715]/90 backdrop-blur-sm border border-[#E0D7C9] dark:border-[#2F3731] text-[#3D4741] dark:text-[#C5CDC7]">
-                    {item.tag}
-                  </span>
+              <Image
+                src={item.image}
+                alt={item.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#150B0D]/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-9 h-9 rounded-xl bg-white/80 backdrop-blur-md text-[#1F1617] flex items-center justify-center shadow-md">
+                  <Maximize2 className="w-4 h-4" />
                 </div>
               </div>
 
-              <div className="p-5 space-y-1.5">
-                <h3 className="font-bold text-base text-[#1E2320] dark:text-[#EDEAE4] group-hover:text-[#44634D] dark:group-hover:text-[#7EA88A] transition-colors">
+              <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
+                <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#C5222E]/80 backdrop-blur-md inline-block border border-white/20">
+                  {item.date}
+                </span>
+                <h4 className="text-sm font-bold text-white leading-snug line-clamp-1">
                   {item.title}
-                </h3>
-                <p className="text-xs text-[#5F6B63] dark:text-[#9DAAA0] leading-relaxed">
-                  {item.desc}
-                </p>
+                </h4>
               </div>
             </div>
           ))}
@@ -193,58 +167,56 @@ export default function GallerySection() {
 
       {/* Lightbox Modal */}
       {selectedPhotoIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-4xl bg-[#1B201D] text-white rounded-[2.5rem] border border-[#2A312B] overflow-hidden shadow-2xl p-6 space-y-4">
-            
-            {/* Modal Topbar */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#262D28]">
-              <div>
-                <span className="text-xs font-bold text-[#7EA88A] uppercase tracking-wider">
-                  {filteredItems[selectedPhotoIndex].tag}
-                </span>
-                <h4 className="text-lg font-bold text-white">
-                  {filteredItems[selectedPhotoIndex].title}
-                </h4>
-              </div>
-              <button
-                onClick={() => setSelectedPhotoIndex(null)}
-                className="p-2 rounded-xl bg-[#232924] hover:bg-[#2C342E] text-[#9DAAA0] hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <div 
+          onClick={() => setSelectedPhotoIndex(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedPhotoIndex(null)}
+              className="absolute -top-12 right-0 p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
 
-            {/* Photo Container */}
-            <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-black">
+            {/* Main Lightbox Image */}
+            <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden bg-black shadow-2xl border border-white/10">
               <Image
-                src={filteredItems[selectedPhotoIndex].src}
-                alt={filteredItems[selectedPhotoIndex].alt}
+                src={filteredItems[selectedPhotoIndex].image}
+                alt={filteredItems[selectedPhotoIndex].title}
                 fill
                 className="object-contain"
               />
             </div>
 
-            {/* Description & Navigation */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <p className="text-xs sm:text-sm text-[#9DAAA0] text-center sm:text-left">
-                {filteredItems[selectedPhotoIndex].desc}
-              </p>
+            {/* Bottom Caption & Controls */}
+            <div className="w-full flex items-center justify-between mt-4 text-white px-2">
+              <div>
+                <h4 className="font-bold text-sm sm:text-base">
+                  {filteredItems[selectedPhotoIndex].title}
+                </h4>
+                <p className="text-xs text-white/60">
+                  {filteredItems[selectedPhotoIndex].date}
+                </p>
+              </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
-                  className="p-2.5 rounded-xl bg-[#232924] hover:bg-[#2C342E] text-white transition-colors"
-                  title="Foto Sebelumnya"
+                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="text-xs text-[#7A877E] font-mono px-2">
+                <span className="text-xs font-mono text-white/60 px-1">
                   {selectedPhotoIndex + 1} / {filteredItems.length}
                 </span>
                 <button
                   onClick={handleNext}
-                  className="p-2.5 rounded-xl bg-[#232924] hover:bg-[#2C342E] text-white transition-colors"
-                  title="Foto Berikutnya"
+                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>

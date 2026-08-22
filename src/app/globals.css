@@ -2,33 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #FAF8F5;
-  --foreground: #1E2320;
-  --card-bg: #FFFFFF;
-  --card-border: #EBE5DC;
-  --sage-primary: #44634D;
-  --terracotta: #C27338;
-}
+@layer base {
+  :root {
+    --background: #FDFBF7;
+    --foreground: #1F1617;
+    --card: #FFFFFF;
+    --card-foreground: #1F1617;
+    --popover: #FFFFFF;
+    --popover-foreground: #1F1617;
+    --primary: #C5222E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F7F2E8;
+    --secondary-foreground: #1F1617;
+    --muted: #EFE6D5;
+    --muted-foreground: #5A4D4E;
+    --accent: #80141C;
+    --accent-foreground: #FFFFFF;
+    --destructive: #C5222E;
+    --destructive-foreground: #FFFFFF;
+    --border: #EBDDCF;
+    --input: #EBDDCF;
+    --ring: #C5222E;
+    --radius: 1.25rem;
+  }
 
-.dark {
-  --background: #141715;
-  --foreground: #EDEAE4;
-  --card-bg: #1B201D;
-  --card-border: #2A302C;
-  --sage-primary: #5C8368;
-  --terracotta: #D9894E;
+  .dark {
+    --background: #150B0D;
+    --foreground: #F5EFEB;
+    --card: #221215;
+    --card-foreground: #F5EFEB;
+    --popover: #221215;
+    --popover-foreground: #F5EFEB;
+    --primary: #E03643;
+    --primary-foreground: #FFFFFF;
+    --secondary: #2A161A;
+    --secondary-foreground: #F5EFEB;
+    --muted: #331A1F;
+    --muted-foreground: #B5A1A3;
+    --accent: #B82834;
+    --accent-foreground: #FFFFFF;
+    --destructive: #E03643;
+    --destructive-foreground: #FFFFFF;
+    --border: #3A1C20;
+    --input: #3A1C20;
+    --ring: #E03643;
+  }
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light dark;
 }
 
 body {
+  background-color: var(--background);
   color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -36,25 +66,34 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
 }
 
-/* Refined Scandinavian Minimal Scrollbar */
+/* Custom Scrollbar - Warm Cream & Maroon Theme */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #F7F2E8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #150B0D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 105, 0.25);
+  background: #C5222E;
   border-radius: 9999px;
+  border: 2px solid #F7F2E8;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(160, 180, 168, 0.25);
+  background: #80141C;
+  border: 2px solid #150B0D;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 105, 0.45);
+  background: #80141C;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #A31823;
 }

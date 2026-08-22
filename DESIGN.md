@@ -1,45 +1,36 @@
-# DESIGN SYSTEM - GIA DELIKSARI SEMARANG v3.0.0
-**Arah Desain: Warm Minimalist & Scandinavian Clean**
+# DESIGN SYSTEM v3.1.0 — Warm Cream & Sacred Maroon Edition
 
-## 1. Suasana & Prinsip Visual
-- **Serenity & Warmth**: Nuansa teduh, hangat, dan damai seperti rumah keluarga Allah.
-- **Editorial Whitespace**: Spasi lapang yang memberikan ruang bernapas pada konten (generous padding `py-20` to `py-28`, `gap-8` to `gap-12`).
-- **Organic Earth Tones**: Palet warna alami terinspirasi dari alam (ivory linen, oatmeal, sage green, terracotta, warm clay, charcoal).
-- **Refined Geometry**: Sudut melengkung lembut (`rounded-2xl`, `rounded-[2rem]`), border halus (`border-[#E8E2D8]` / `border-[#2D312E]`), tanpa warna neon atau gradient agresif.
+## 1. Design Archetype: Warm Sacred Elegance (Cream & Crimson/Maroon)
+- **Primary Canvas**: Warm Church Cream (`#FDFBF7`)
+- **Secondary Canvas / Alt Cards**: Soft Warm Linen Cream (`#F7F2E8`, `#EFE6D5`)
+- **Primary Sacred Red**: Crimson Red (`#C5222E`)
+- **Secondary Rich Maroon**: Burgundy Maroon (`#80141C`, `#6B0E16`)
+- **Maroon Gradient**: `bg-gradient-to-r from-[#C5222E] via-[#A31823] to-[#7B0F17]`
+- **Text Headings**: Charcoal Espresso (`#1F1617`) / White (`#FFFFFF`)
+- **Text Body**: Warm Coffee Slate (`#5A4D4E`) / Soft Cream White (`#E8DFDE`)
+- **Borders**: Cream Sand Border (`#EBDDCF`, `#DFCEBC`) / Dark Maroon Border (`#3A1C20`)
+- **Dark Mode Background**: Velvet Maroon Charcoal (`#150B0D`)
+- **Dark Mode Cards**: Deep Maroon Plum (`#221215`, `#2A161A`)
 
-## 2. Palet Warna Semantik (Earth-Tone Tokens)
+## 2. Palette Tokens
+| Token Name | Light Value | Dark Value | Usage |
+| :--- | :--- | :--- | :--- |
+| `canvas` | `#FDFBF7` (Warm Cream) | `#150B0D` (Deep Maroon Black) | Main page background |
+| `surface` | `#FFFFFF` (Pure White) | `#221215` (Plum Surface) | Main cards & containers |
+| `surface-subtle` | `#F7F2E8` (Linen Cream) | `#2A161A` (Subtle Maroon) | Secondary sections, chips |
+| `primary-red` | `#C5222E` (Crimson) | `#E03643` (Bright Crimson) | Buttons, accents, active states |
+| `maroon-deep` | `#80141C` (Rich Maroon) | `#B82834` (Vibrant Maroon) | Secondary branding, hero badge |
+| `gold-accent` | `#C59B27` (Sacred Gold) | `#E5B640` (Bright Gold) | Cross icons, verse highlights |
+| `border-cream` | `#EBDDCF` | `#3A1C20` | Card borders & separators |
 
-### 2.1 Base Canvas & Surface
-- **Canvas Light**: `#FAF8F5` (Warm Cream / Ivory Linen)
-- **Canvas Light Surface (Card)**: `#FFFFFF` (Pure Linen) dengan border `#EBE5DC`
-- **Canvas Dark**: `#141715` (Deep Warm Charcoal)
-- **Canvas Dark Surface (Card)**: `#1B201D` (Muted Pine Dark) dengan border `#2A302C`
+## 3. Ministry Color Badges
+- **Ibadah Raya / General**: `bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]`
+- **Youth (Grow Generation)**: `bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72] dark:border-[#57241A]`
+- **Kidz (COC Kidz)**: `bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]`
+- **Hana (Wanita) & Komsel**: `bg-[#FDF0F4] text-[#A6264A] border-[#F7C6D5] dark:bg-[#33121E] dark:text-[#EA7FA0] dark:border-[#541D30]`
 
-### 2.2 Brand & Accent Colors
-- **Primary Sage Green**: `#44634D` (Hover: `#36503E`, Light tint: `#EBF1EC`) — *Ketenangan, Pertumbuhan Rohani, Kehidupan*
-- **Warm Terracotta**: `#C27338` (Hover: `#A9602A`, Light tint: `#FAEEE5`) — *Kehangatan Kasih, Generasi Muda*
-- **Honey Ochre**: `#C89434` (Hover: `#AF7F26`, Light tint: `#FBF4E7`) — *Keceriaan Anak-Anak COC Kidz*
-- **Rose Clay**: `#B35667` (Hover: `#9B4454`, Light tint: `#FAECF0`) — *Persekutuan Wanita Hana & Kasih Persaudaraan*
-- **Deep Forest Slate**: `#1B241E` (Teks Utama Light Mode)
-- **Soft Muted Sage**: `#5F6B63` (Teks Sekunder Light Mode)
-
-## 3. Tipografi
-- **Headline Display**: High-contrast, elegant modern sans (`font-sans font-extrabold tracking-tight`) dengan sentuhan editorial.
-- **Body Text**: Sangat mudah dibaca, line-height lega (`leading-relaxed`), kontras terjaga sesuai standar WCAG AAA.
-- **Badges & Pills**: `rounded-full text-xs font-bold tracking-wide uppercase px-3.5 py-1.5`.
-
-## 4. Komponen & Micro-Interactions
-- **Buttons**:
-  - Primary Action: Background `#44634D` (Sage Green) dengan teks putih, `rounded-2xl`, shadow halus `shadow-sm hover:shadow-md hover:scale-[1.01]`.
-  - Secondary Action: Border `#D8D1C5` (Linen), background `white/80` (Dark: `#1B201D`), hover: `bg-[#F0EBE3]`.
-  - Terracotta Highlight: Background `#C27338` untuk CTA penting / sambutan.
-- **Card Containers**:
-  - `rounded-[2rem]` dengan border halus 1px dan soft shadow `shadow-[0_4px_20px_rgba(0,0,0,0.03)]`.
-- **Badges**:
-  - Sage badge untuk identitas umum
-  - Terracotta badge untuk Youth
-  - Honey badge untuk Kidz
-  - Rose badge untuk Hana & Komsel
-
----
-*GIA Deliksari — Warm Minimalist Scandinavian Design System 2026*
+## 4. UI Patterns
+- **Buttons**: `bg-gradient-to-r from-[#C5222E] via-[#A81722] to-[#80141C] text-white hover:opacity-95 shadow-md shadow-red-900/10 rounded-2xl`
+- **Badges**: `rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider`
+- **Cards**: `rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all`
+- **Typography**: Display font (Plus Jakarta Sans) for strong pastoral headlines, Sans font (Inter) for crisp readability.
