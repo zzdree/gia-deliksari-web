@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { Sparkles, Clock, ArrowUpRight, Users } from 'lucide-react';
+import { Clock, ArrowUpRight, Users } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 
 export default function MinistriesSection() {

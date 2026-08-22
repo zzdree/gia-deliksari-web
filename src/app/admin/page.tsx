@@ -465,6 +465,7 @@ export default function AdminPage() {
                     type="password"
                     required
                     autoFocus
+                    autoComplete="current-password"
                     placeholder="Masukkan password (Default: 9900)"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
