@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
+import HospitalitySection from '@/components/HospitalitySection';
 import AboutSection from '@/components/AboutSection';
 import MinistriesSection from '@/components/MinistriesSection';
 import SermonsSection from '@/components/SermonsSection';
@@ -21,6 +22,7 @@ export default function Home() {
       {/* Main Page Flow */}
       <main className="flex-1">
         <Hero />
+        <HospitalitySection />
         <AboutSection />
         <MinistriesSection />
         <SermonsSection />

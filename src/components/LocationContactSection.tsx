@@ -1,20 +1,43 @@
-import React from 'react';
-import { MapPin, ExternalLink } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { MapPin, ExternalLink, HelpCircle, ChevronDown } from 'lucide-react';
 import { InstagramIcon, YouTubeIcon } from './Icons';
 
 export default function LocationContactSection() {
   const gmapsShareUrl =
     process.env.NEXT_PUBLIC_GMAPS_SHARE_URL || 'https://share.google/O7HqL1J615kgxt66v';
 
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const faqs = [
+    {
+      q: 'Jam berapa saja ibadah rutin di GIA Deliksari?',
+      a: 'Ibadah Raya Umum diadakan setiap Minggu pukul 09.00 - 11.00 WIB. Ibadah Anak (COC Kidz) setiap Minggu pukul 09.30 - 10.30 WIB. Ibadah Pemuda (Grow Generation) setiap Sabtu pukul 18.00 - 20.00 WIB. Persekutuan Wanita Hana & Komsel Ekklesia diadakan selang-seling mingguan.',
+    },
+    {
+      q: 'Bagaimana akses lokasi dan ketersediaan tempat parkir?',
+      a: 'Gereja beralamat di Jl. Kolonel Hadijanto, Deliksari, Gunungpati, Semarang. Akses jalan sangat mudah dijangkau dari arah Sampangan maupun Unnes, dan tersedia area parkir mobil dan sepeda motor yang aman dengan panduan tim usher.',
+    },
+    {
+      q: 'Bagaimana jika saya ingin mendaftar sakramen Baptisan atau Penyerahan Anak?',
+      a: 'Anda dapat langsung mengisi formulir pendaftaran pada menu Layanan di website ini atau menghubungi sekretariat pastoral via WhatsApp untuk penjadwalan pembekalan dan tanggal pelaksanaan sakramen.',
+    },
+    {
+      q: 'Bagaimana cara bergabung dalam Komsel Ekklesia atau Komunitas Hana?',
+      a: 'Komsel dan persekutuan terbuka bagi seluruh jemaat dan keluarga. Silakan hubungi tim pastoral melalui tombol WhatsApp di web ini atau temui tim usher setelah ibadah hari Minggu.',
+    },
+  ];
+
   return (
-    <section id="lokasi" className="py-20 bg-slate-100/70 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 transition-colors">
+    <section id="kontak" className="py-20 bg-slate-100/70 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-black uppercase tracking-wider shadow-sm">
             <MapPin className="w-3.5 h-3.5" />
-            <span>Lokasi & Kontak Gereja</span>
+            <span>Lokasi, Kontak & Tanya Jawab</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Kunjungi & Terhubung Bersama Kami
@@ -184,6 +207,48 @@ export default function LocationContactSection() {
 
           </div>
 
+        </div>
+
+        {/* Interactive FAQ Accordion */}
+        <div className="mt-16 pt-12 border-t border-slate-200 dark:border-slate-800">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider">
+              <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Tanya Jawab Jemaat</span>
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Pertanyaan yang Sering Diajukan (FAQ)
+            </h3>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-3">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={faq.q}
+                  className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm transition-all"
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-slate-400 transition-transform duration-200 shrink-0 ${
+                        isOpen ? 'rotate-180 text-amber-500' : ''
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-700/60 pt-3">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
       </div>

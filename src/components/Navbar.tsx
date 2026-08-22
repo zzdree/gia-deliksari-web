@@ -14,6 +14,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Beranda', href: '/#beranda' },
+    { name: 'Baru di Sini', href: '/#kunjungan' },
     { name: 'Tentang', href: '/#tentang' },
     { name: 'Pelayanan', href: '/#pelayanan' },
     { name: 'Khotbah', href: '/#khotbah' },
@@ -58,12 +59,12 @@ export default function Navbar() {
 
           {/* Desktop Navigation Links */}
           {!isAdmin ? (
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+                  className="px-2.5 xl:px-3 py-2 rounded-lg text-xs xl:text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -92,7 +93,7 @@ export default function Navbar() {
             {!isAdmin && (
               <Link
                 href="/admin"
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 shadow-sm transition-all"
+                className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 shadow-sm transition-all"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>Portal Admin</span>
@@ -120,7 +121,7 @@ export default function Navbar() {
                 key={link.name}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
+                className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 {link.name}
               </Link>
