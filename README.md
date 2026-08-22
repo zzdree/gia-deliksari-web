@@ -21,14 +21,14 @@
 
 ---
 
-## 🌐 Tautan Halaman & Akses Aplikasi (Live Routes)
+## 🌐 Tautan Halaman & Akses Aplikasi (Live Deployment)
 
-Aplikasi web ini terbagi menjadi dua gerbang akses utama:
+Website telah resmi aktif dan ter-deploy secara langsung di **Vercel Production**:
 
-| Gerbang Akses | Tautan Halaman | Deskripsi & Autentikasi |
-|---|---|---|
-| 🕊️ **Public Landing Page** | [`/public`](/public) atau [`/`](/) | Akses publik terbuka untuk jemaat & pengunjung: profil gereja, visi gembala, warta jemaat, 4 pilar ibadah, galeri foto asli, jadwal, dan kontak. |
-| 🛡️ **Admin Management Portal** | [`/admin`](/admin) | Akses internal pengurus gereja untuk input warta, plotting jadwal pelayan ibadah, dan checklist inventaris. **Default Password:** `9900` |
+| Gerbang Akses | Tautan Halaman Langsung (Live URL) | Path Lokal | Deskripsi & Autentikasi |
+|---|---|---|---|
+| 🕊️ **Public Landing Page** | [**gia-deliksari-web.vercel.app**](https://gia-deliksari-web.vercel.app) | [`/public`](/public) / [`/`](/) | Akses publik jemaat & pengunjung: profil gereja, visi gembala, warta jemaat, 4 pilar ibadah, galeri foto asli, jadwal, dan kontak. |
+| 🛡️ **Admin Management Portal** | [**gia-deliksari-web.vercel.app/admin**](https://gia-deliksari-web.vercel.app/admin) | [`/admin`](/admin) | Akses internal pengurus gereja untuk input warta, plotting jadwal pelayan ibadah, dan checklist inventaris. **Default Password:** `9900` |
 
 ---
 
