@@ -1,0 +1,32 @@
+PROPRIETARY AND CONFIDENTIAL SOURCE CODE LICENSE AGREEMENT
+
+Copyright (c) 2026 Gereja Isa Almasih Deliksari Semarang.
+All Rights Reserved.
+
+IMPORTANT NOTICE — READ CAREFULLY:
+This source code, software architecture, user interface design, assets, database schemas, and all accompanying documentation (collectively, the "Software") are the exclusive and confidential proprietary property of Gereja Isa Almasih (GIA) Deliksari Semarang.
+
+1. PROPRIETARY AND NON-DISCLOSURE
+This Software is strictly private and confidential. Unauthorized copying, distribution, decompilation, reverse engineering, dissemination, modification, or public hosting of any portion of this Software without express, prior written authorization from the Board of Ministry and Authorized Pastors of GIA Deliksari Semarang is strictly prohibited.
+
+2. GRANT OF LIMITED INTERNAL USAGE
+Permission is hereby granted solely to authorized developers, pastoral staff, and technical administrators appointed by GIA Deliksari Semarang to view, edit, execute, and maintain this codebase exclusively for internal ecclesiastical administration, congregational service, and digital ministry operations.
+
+3. RESTRICTIONS
+You may not:
+  a. Sell, rent, lease, sublicense, distribute, or commercially exploit the Software in whole or in part.
+  b. Fork, rebrand, or publish this Software or any of its derivatives under an open-source license.
+  c. Disclose, distribute, or expose sensitive configuration credentials, environment secrets, Supabase connection tokens, or administrative credentials associated with this project to any third party.
+  d. Remove, alter, or obscure any copyright notices, trademarks, or proprietary markings present within the codebase.
+
+4. NO WARRANTY & DISCLAIMER
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL GEREJA ISA ALMASIH DELIKSARI SEMARANG OR ITS CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+5. JURISDICTION & GOVERNING LAW
+This License Agreement is governed by and construed in accordance with the laws of the Republic of Indonesia.
+
+For licensing permissions, ministry inquiries, or access requests, please contact:
+Gereja Isa Almasih Deliksari Semarang
+Email   : giadeliksari@gmail.com
+Address : Jl. Kolonel Hadijanto, Deliksari, Kec. Gunung Pati, Kota Semarang, Jawa Tengah 50229
+Website : https://www.instagram.com/giadeliksari/
