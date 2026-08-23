@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { 
   Camera, 
@@ -10,67 +10,32 @@ import {
   Sparkles,
   Maximize2
 } from 'lucide-react';
-
-interface GalleryItem {
-  id: string;
-  title: string;
-  category: 'ibadah' | 'worship' | 'youth' | 'komunitas';
-  image: string;
-  date: string;
-}
-
-const GALLERY_ITEMS: GalleryItem[] = [
-  {
-    id: 'gal-1',
-    title: 'Gedung Sanctuary GIA Deliksari Semarang',
-    category: 'ibadah',
-    image: '/images/gallery-1.jpg',
-    date: 'Agustus 2026',
-  },
-  {
-    id: 'gal-2',
-    title: 'Pemberitaan Firman & Penggembalaan Jemaat',
-    category: 'ibadah',
-    image: '/images/gallery-2.jpg',
-    date: 'Agustus 2026',
-  },
-  {
-    id: 'gal-3',
-    title: 'Praise & Worship DS Worship Team',
-    category: 'worship',
-    image: '/images/gallery-3.jpg',
-    date: 'Juli 2026',
-  },
-  {
-    id: 'gal-4',
-    title: 'Keceriaan Ibadah Anak Sekolah Minggu COC Kidz',
-    category: 'komunitas',
-    image: '/images/gallery-4.jpg',
-    date: 'Juli 2026',
-  },
-  {
-    id: 'gal-5',
-    title: 'Persekutuan & Doa Bersama Jemaat',
-    category: 'komunitas',
-    image: '/images/gallery-5.jpg',
-    date: 'Juni 2026',
-  },
-  {
-    id: 'gal-6',
-    title: 'Fellowship Pemuda Grow Generation PRBK',
-    category: 'youth',
-    image: '/images/gallery-6.jpg',
-    date: 'Juni 2026',
-  },
-];
+import { dataStore } from '@/lib/storage';
+import { GalleryItem } from '@/types';
+import { INITIAL_GALLERY } from '@/lib/seedData';
 
 export default function GallerySection() {
+  const [items, setItems] = useState<GalleryItem[]>(INITIAL_GALLERY);
   const [activeFilter, setActiveFilter] = useState<'all' | 'ibadah' | 'worship' | 'youth' | 'komunitas'>('all');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
+  useEffect(() => {
+    async function loadGallery() {
+      try {
+        const data = await dataStore.getGallery();
+        if (data && data.length > 0) {
+          setItems(data);
+        }
+      } catch (err) {
+        console.warn('Error loading gallery from dataStore:', err);
+      }
+    }
+    loadGallery();
+  }, []);
+
   const filteredItems = activeFilter === 'all'
-    ? GALLERY_ITEMS
-    : GALLERY_ITEMS.filter((item) => item.category === activeFilter);
+    ? items
+    : items.filter((item) => item.category === activeFilter);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -119,7 +84,7 @@ export default function GallerySection() {
                 onClick={() => setActiveFilter(filter.id as any)}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   activeFilter === filter.id
-                    ? 'bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white shadow-xs'
+                    ? 'bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white shadow-sm'
                     : 'bg-white dark:bg-[#221215] text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-[#F7F2E8] dark:hover:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20]'
                 }`}
               >
@@ -138,7 +103,7 @@ export default function GallerySection() {
               className="group relative aspect-[4/3] rounded-[2rem] overflow-hidden bg-[#F7F2E8] dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md cursor-pointer transition-all"
             >
               <Image
-                src={item.image}
+                src={item.image || '/images/gallery-1.jpg'}
                 alt={item.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -186,7 +151,7 @@ export default function GallerySection() {
             {/* Main Lightbox Image */}
             <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden bg-black shadow-2xl border border-white/10">
               <Image
-                src={filteredItems[selectedPhotoIndex].image}
+                src={filteredItems[selectedPhotoIndex].image || '/images/gallery-1.jpg'}
                 alt={filteredItems[selectedPhotoIndex].title}
                 fill
                 className="object-contain"

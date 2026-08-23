@@ -9,9 +9,13 @@ import {
   Users, 
   UserPlus, 
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  Check
 } from 'lucide-react';
 import { WhatsAppIcon } from './Icons';
+import { dataStore } from '@/lib/storage';
+import { MinistryRequest } from '@/types';
 
 type ServiceType = 'prayer' | 'sacrament' | 'komsel' | 'volunteer';
 
@@ -25,34 +29,61 @@ export default function MinistryRegistrationSection() {
   const [volunteerRole, setVolunteerRole] = useState('Pujian & Penyembahan (Worship/Musisi)');
   const [message, setMessage] = useState('');
   const [needPastoralVisit, setNeedPastoralVisit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     let details = '';
     let headerText = '';
+    let subType = '';
 
     if (activeTab === 'prayer') {
       headerText = 'Permohonan Doa & Konseling Pastoral';
+      subType = prayerType;
       details = `Jenis Pokok: ${prayerType}\nPesan/Pokok Doa: ${message || '-'}\nPermohonan Kunjungan Selasa: ${needPastoralVisit ? 'Ya, Mohon Dikunjungi' : 'Tidak'}`;
     } else if (activeTab === 'sacrament') {
       headerText = 'Pendaftaran Sakramen & Pelayanan Kudus';
+      subType = sacramentType;
       details = `Jenis Pelayanan: ${sacramentType}\nCatatan Tambahan: ${message || '-'}`;
     } else if (activeTab === 'komsel') {
       headerText = 'Pendaftaran Bergabung Komsel Ekklesia';
+      subType = komselArea;
       details = `Area Tempat Tinggal: ${komselArea}\nCatatan: ${message || '-'}`;
     } else if (activeTab === 'volunteer') {
       headerText = 'Pendaftaran Pelayan Ibadah (Volunteer)';
+      subType = volunteerRole;
       details = `Bidang Pelayanan: ${volunteerRole}\nPengalaman / Catatan: ${message || '-'}`;
+    }
+
+    const newRequest: MinistryRequest = {
+      id: `req-${Date.now()}`,
+      type: activeTab,
+      name,
+      phone,
+      subType,
+      message,
+      needPastoralVisit: activeTab === 'prayer' ? needPastoralVisit : false,
+      status: 'new',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to Supabase & LocalStorage
+    try {
+      await dataStore.saveMinistryRequest(newRequest);
+    } catch (err) {
+      console.warn('Failed saving request to database, continuing WhatsApp redirect:', err);
     }
 
     const fullMessage = `*Syalom GIA Deliksari Semarang*\n\n*${headerText}*\n\nNama: ${name}\nNo. WhatsApp: ${phone}\n${details}\n\nTerima kasih, Tuhan Yesus Memberkati.`;
 
-    const phoneTarget = '6281234567890';
+    const phoneTarget = process.env.NEXT_PUBLIC_CHURCH_WHATSAPP || '6281234567890';
     const waUrl = `https://api.whatsapp.com/send?phone=${phoneTarget}&text=${encodeURIComponent(fullMessage)}`;
 
     window.open(waUrl, '_blank');
+    setIsSubmitting(false);
     setIsSubmitted(true);
 
     setTimeout(() => {
@@ -61,7 +92,7 @@ export default function MinistryRegistrationSection() {
       setPhone('');
       setMessage('');
       setNeedPastoralVisit(false);
-    }, 4000);
+    }, 5000);
   };
 
   return (
@@ -118,10 +149,10 @@ export default function MinistryRegistrationSection() {
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-extrabold text-[#1F1617] dark:text-[#F5EFEB]">
-                Formulir Telah Terkirim!
+                Formulir Berhasil Dikirim & Tersimpan!
               </h3>
               <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] max-w-md mx-auto">
-                Pesan Anda sedang diteruskan ke WhatsApp Tim Pastoral GIA Deliksari. Hamba Tuhan kami akan segera merespons Anda.
+                Permohonan Anda telah tercatat dalam sistem layanan gereja dan diteruskan ke WhatsApp Tim Pastoral GIA Deliksari.
               </p>
             </div>
           ) : (
@@ -138,13 +169,13 @@ export default function MinistryRegistrationSection() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Contoh: Andreas Handoko"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                    Nomor WhatsApp <span className="text-[#C5222E]">*</span>
+                    Nomor WhatsApp / HP <span className="text-[#C5222E]">*</span>
                   </label>
                   <input
                     type="tel"
@@ -152,122 +183,131 @@ export default function MinistryRegistrationSection() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Contoh: 081234567890"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                   />
                 </div>
               </div>
 
-              {/* Dynamic Field Per Active Tab */}
+              {/* Dynamic Form Fields Based on Tab */}
               {activeTab === 'prayer' && (
-                <div className="space-y-4">
+                <div className="space-y-6 animate-in fade-in">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                      Kategori Pokok Doa
+                      Kategori Permohonan Doa
                     </label>
                     <select
                       value={prayerType}
                       onChange={(e) => setPrayerType(e.target.value)}
-                      className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                      className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                     >
-                      <option value="Doa Kesembuhan">Doa Kesembuhan & Pemulihan Tubuh</option>
-                      <option value="Doa Keluarga & Rumah Tangga">Doa Keluarga & Rumah Tangga</option>
-                      <option value="Doa Pekerjaan & Usaha">Doa Pekerjaan, Studi & Usaha</option>
-                      <option value="Konseling Pastoral">Permohonan Konseling Bersama Gembala</option>
-                      <option value="Ucapan Syukur">Pokok Doa Ucapan Syukur</option>
+                      <option value="Doa Kesembuhan">Doa Kesembuhan / Sakit Penyakit</option>
+                      <option value="Pemulihan Keluarga / Pernikahan">Pemulihan Keluarga / Pernikahan</option>
+                      <option value="Pekerjaan & Studi">Pekerjaan, Usaha & Perkuliahan</option>
+                      <option value="Konseling Pastoral Bersama Pendeta">Konseling Pastoral Empat Mata</option>
+                      <option value="Ucapan Syukur">Ucapan Syukur / Kesaksian</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25]">
-                    <input
-                      type="checkbox"
-                      id="pastoralVisit"
-                      checked={needPastoralVisit}
-                      onChange={(e) => setNeedPastoralVisit(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#C5222E] focus:ring-[#C5222E] border-[#EBDDCF]"
-                    />
-                    <label htmlFor="pastoralVisit" className="text-xs font-semibold text-[#9A1620] dark:text-[#F2828C] cursor-pointer">
-                      Saya rindu dikunjungi hamba Tuhan pada jadwal Kunjungan Hari Selasa.
+                  <div className="p-4 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-[#9A1620] dark:text-[#F2828C] flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#C5222E]" />
+                        <span>Kunjungan Pastoral Hari Selasa</span>
+                      </div>
+                      <p className="text-[11px] text-[#5A4D4E] dark:text-[#D5C2C4]">
+                        Centang jika Anda / keluarga memohon kunjungan doa hamba Tuhan ke rumah/rumah sakit di hari Selasa.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={needPastoralVisit}
+                        onChange={(e) => setNeedPastoralVisit(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C5222E]"></div>
                     </label>
                   </div>
                 </div>
               )}
 
               {activeTab === 'sacrament' && (
-                <div className="space-y-2">
+                <div className="space-y-2 animate-in fade-in">
                   <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                    Jenis Sakramen / Pelayanan Kudus
+                    Pilih Pelayanan Sakramen / Upacara Kudus
                   </label>
                   <select
                     value={sacramentType}
                     onChange={(e) => setSacramentType(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                   >
-                    <option value="Baptisan Selam">Baptisan Air Kudus (Baptisan Selam)</option>
-                    <option value="Penyerahan Anak">Penyerahan Bayi / Anak</option>
-                    <option value="Pemberkatan Nikah">Konseling & Pemberkatan Nikah Kudus</option>
-                    <option value="Perjamuan Kudus di Rumah (Sakit)">Pelayanan Perjamuan Kudus Khusus di Rumah/RS</option>
+                    <option value="Baptisan Selam">Baptisan Selam Dewasa</option>
+                    <option value="Penyerahan Anak / Bayi">Penyerahan Anak / Bayi Dedication</option>
+                    <option value="Pemberkatan Nikah Kudus">Pemberkatan Nikah Kudus</option>
+                    <option value="Perjamuan Kudus di Rumah (Lansia/Sakit)">Perjamuan Kudus di Rumah (Lansia/Sakit)</option>
                   </select>
                 </div>
               )}
 
               {activeTab === 'komsel' && (
-                <div className="space-y-2">
+                <div className="space-y-2 animate-in fade-in">
                   <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                    Area Domisili / Tempat Tinggal
+                    Wilayah / Area Domisili Tempat Tinggal
                   </label>
                   <select
                     value={komselArea}
                     onChange={(e) => setKomselArea(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                   >
-                    <option value="Deliksari / Sekaran">Deliksari / Sekaran (Dekat Kampus UNNES)</option>
-                    <option value="Gunungpati Umum">Gunungpati & Sekitarnya</option>
-                    <option value="Sampangan / Manyaran">Sampangan / Manyaran</option>
-                    <option value="Ungaran / Banyumanik">Ungaran / Banyumanik</option>
+                    <option value="Deliksari / Sukorejo">Komsel Wilayah Deliksari / Sukorejo</option>
+                    <option value="Sekaran / Kampus UNNES (Mahasiswa)">Komsel Mahasiswa Sekaran / Sekitar UNNES</option>
+                    <option value="Sampangan / Menoreh">Komsel Wilayah Sampangan / Menoreh</option>
+                    <option value="Gunungpati Umum">Komsel Umum Wilayah Gunungpati</option>
                   </select>
                 </div>
               )}
 
               {activeTab === 'volunteer' && (
-                <div className="space-y-2">
+                <div className="space-y-2 animate-in fade-in">
                   <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
                     Bidang Pelayanan yang Dirindukan
                   </label>
                   <select
                     value={volunteerRole}
                     onChange={(e) => setVolunteerRole(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all"
                   >
-                    <option value="Pujian & Penyembahan (Worship/Musisi)">Praise & Worship (Singer, Musisi Keyboard/Gitar/Drum)</option>
-                    <option value="Multimedia, LCD & Live Streaming">Multimedia, Operator Proyektor & Live Streaming</option>
-                    <option value="Guru & Pendamping Sekolah Minggu COC Kidz">Guru Sekolah Minggu COC Kidz</option>
-                    <option value="Usher, Penerima Tamu & Kolektan">Usher, Welcoming Team & Kolektan</option>
-                    <option value="Tim Kreatif & Dokumentasi Sosial Media">Creative Media & Desain Konten Medsos</option>
+                    <option value="Pujian & Penyembahan (Worship/Musisi)">Pujian & Penyembahan (WL / Singer / Pemain Musik)</option>
+                    <option value="Multimedia, Slide & Live Streaming">Multimedia (Slide Operator, Sound System, Camera Streaming)</option>
+                    <option value="Guru Sekolah Minggu (COC Kidz)">Guru Sekolah Minggu (COC Kidz)</option>
+                    <option value="Penyambut Jemaat (Usher & Kolektan)">Penyambut Jemaat (Usher & Kolektan)</option>
+                    <option value="Tim Kreatif & Sosial Media">Tim Kreatif, Fotografi & Sosial Media</option>
                   </select>
                 </div>
               )}
 
-              {/* Message Box */}
+              {/* Message Details */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                  Tuliskan Rincian atau Pesan Anda
+                  Pesan atau Catatan Tambahan (Opsional)
                 </label>
                 <textarea
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tuliskan pokok doa, pertanyaan, atau catatan untuk tim pastoral kami..."
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C5222E]"
+                  placeholder="Tuliskan pokok doa, pertanyaan, atau catatan khusus Anda di sini..."
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all resize-none"
                 />
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#C5222E] via-[#A81722] to-[#80141C] hover:opacity-95 text-white font-bold text-sm shadow-md shadow-red-950/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                disabled={isSubmitting}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md shadow-red-900/20 transition-all cursor-pointer disabled:opacity-70"
               >
-                <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
-                <span>Kirim Formulir ke WhatsApp Pastoral</span>
+                <WhatsAppIcon className="w-5 h-5 text-white" />
+                <span>{isSubmitting ? 'Menyimpan & Menghubungkan...' : 'Kirim Formulir ke Tim Pastoral'}</span>
               </button>
 
             </form>

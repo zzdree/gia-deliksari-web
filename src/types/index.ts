@@ -47,3 +47,38 @@ export interface InventoryItem {
   notes?: string;
   createdAt: string;
 }
+
+export interface Sermon {
+  id: string;
+  title: string;
+  speaker: string;
+  passage: string;
+  date: string;
+  youtubeUrl: string;
+  thumbnail: string;
+  category: string;
+  createdAt?: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: 'ibadah' | 'worship' | 'youth' | 'komunitas';
+  image: string;
+  date: string;
+  createdAt?: string;
+}
+
+export type MinistryRequestType = 'prayer' | 'sacrament' | 'komsel' | 'volunteer';
+
+export interface MinistryRequest {
+  id: string;
+  type: MinistryRequestType;
+  name: string;
+  phone: string;
+  subType?: string;
+  message?: string;
+  needPastoralVisit?: boolean;
+  status: 'new' | 'in_progress' | 'completed';
+  createdAt: string;
+}

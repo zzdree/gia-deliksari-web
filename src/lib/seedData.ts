@@ -1,4 +1,4 @@
-import { Announcement, ServantRoster, InventoryItem } from '@/types';
+import { Announcement, ServantRoster, InventoryItem, Sermon, GalleryItem, MinistryRequest } from '@/types';
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   {
@@ -324,5 +324,128 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     checkedBy: 'Bpk. Hendra',
     notes: 'Suhu diset 22°C remote tersimpan di meja operator',
     createdAt: '2026-08-01T00:00:00Z',
+  }
+];
+
+export const INITIAL_SERMONS: Sermon[] = [
+  {
+    id: 'srm-1',
+    title: 'Bertumbuh Kuat di Tengah Badai Kehidupan',
+    speaker: 'Ps. Yohanes Sutono',
+    passage: 'Kolose 2:6-7 & Mazmur 1:1-3',
+    date: 'Minggu, 16 Agustus 2026',
+    youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+    thumbnail: '/images/gallery-2.jpg',
+    category: 'Ibadah Raya',
+    createdAt: '2026-08-16T10:00:00Z',
+  },
+  {
+    id: 'srm-2',
+    title: 'Generasi yang Menyala Bagi Kemuliaan Kristus',
+    speaker: 'Kak Noel Yosan, S.Th.',
+    passage: '1 Timotius 4:12',
+    date: 'Sabtu, 15 Agustus 2026',
+    youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+    thumbnail: '/images/gallery-6.jpg',
+    category: 'Grow Generation Youth',
+    createdAt: '2026-08-15T19:00:00Z',
+  },
+  {
+    id: 'srm-3',
+    title: 'Keluarga Beriman yang Berakar dalam Kasih',
+    speaker: 'Ps. Yohanes Sutono',
+    passage: 'Yosua 24:15 & Efesus 5:1-2',
+    date: 'Minggu, 9 Agustus 2026',
+    youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+    thumbnail: '/images/gallery-5.jpg',
+    category: 'Ibadah Raya',
+    createdAt: '2026-08-09T10:00:00Z',
+  }
+];
+
+export const INITIAL_GALLERY: GalleryItem[] = [
+  {
+    id: 'gal-1',
+    title: 'Gedung Sanctuary GIA Deliksari Semarang',
+    category: 'ibadah',
+    image: '/images/gallery-1.jpg',
+    date: 'Agustus 2026',
+    createdAt: '2026-08-01T00:00:00Z',
+  },
+  {
+    id: 'gal-2',
+    title: 'Pemberitaan Firman & Penggembalaan Jemaat',
+    category: 'ibadah',
+    image: '/images/gallery-2.jpg',
+    date: 'Agustus 2026',
+    createdAt: '2026-08-01T00:00:00Z',
+  },
+  {
+    id: 'gal-3',
+    title: 'Praise & Worship DS Worship Team',
+    category: 'worship',
+    image: '/images/gallery-3.jpg',
+    date: 'Juli 2026',
+    createdAt: '2026-07-15T00:00:00Z',
+  },
+  {
+    id: 'gal-4',
+    title: 'Keceriaan Ibadah Anak Sekolah Minggu COC Kidz',
+    category: 'komunitas',
+    image: '/images/gallery-4.jpg',
+    date: 'Juli 2026',
+    createdAt: '2026-07-15T00:00:00Z',
+  },
+  {
+    id: 'gal-5',
+    title: 'Persekutuan & Doa Bersama Jemaat',
+    category: 'komunitas',
+    image: '/images/gallery-5.jpg',
+    date: 'Juni 2026',
+    createdAt: '2026-06-20T00:00:00Z',
+  },
+  {
+    id: 'gal-6',
+    title: 'Fellowship Pemuda Grow Generation PRBK',
+    category: 'youth',
+    image: '/images/gallery-6.jpg',
+    date: 'Juni 2026',
+    createdAt: '2026-06-20T00:00:00Z',
+  },
+];
+
+export const INITIAL_MINISTRY_REQUESTS: MinistryRequest[] = [
+  {
+    id: 'req-1',
+    type: 'prayer',
+    name: 'Budi Santoso',
+    phone: '081234567891',
+    subType: 'Doa Kesembuhan',
+    message: 'Mohon dukungan doa untuk kesembuhan ibu saya yang sedang dirawat.',
+    needPastoralVisit: true,
+    status: 'in_progress',
+    createdAt: '2026-08-22T08:30:00Z',
+  },
+  {
+    id: 'req-2',
+    type: 'sacrament',
+    name: 'Maria Stephanie',
+    phone: '081234567892',
+    subType: 'Baptisan Selam',
+    message: 'Ingin dibaptis selam pada gelombang baptisan berikutnya.',
+    needPastoralVisit: false,
+    status: 'new',
+    createdAt: '2026-08-23T04:15:00Z',
+  },
+  {
+    id: 'req-3',
+    type: 'volunteer',
+    name: 'Kevin Pratama',
+    phone: '081234567893',
+    subType: 'Multimedia & Operator Slide',
+    message: 'Rindu melayani di bagian slide & proyektor ibadah raya.',
+    needPastoralVisit: false,
+    status: 'completed',
+    createdAt: '2026-08-20T11:00:00Z',
   }
 ];

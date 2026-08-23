@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { 
   Play, 
@@ -12,40 +12,26 @@ import {
   Radio
 } from 'lucide-react';
 import { YouTubeIcon } from './Icons';
+import { dataStore } from '@/lib/storage';
+import { Sermon } from '@/types';
+import { INITIAL_SERMONS } from '@/lib/seedData';
 
 export default function SermonsSection() {
-  const sermons = [
-    {
-      id: 'sermon-1',
-      title: 'Bertumbuh Kuat di Tengah Badai Kehidupan',
-      speaker: 'Ps. Yohanes Sutono',
-      passage: 'Kolose 2:6-7 & Mazmur 1:1-3',
-      date: 'Minggu, 16 Agustus 2026',
-      youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
-      thumbnail: '/images/gallery-2.jpg',
-      category: 'Ibadah Raya',
-    },
-    {
-      id: 'sermon-2',
-      title: 'Generasi yang Menyala Bagi Kemuliaan Kristus',
-      speaker: 'Kak Noel Yosan, S.Th.',
-      passage: '1 Timotius 4:12',
-      date: 'Sabtu, 15 Agustus 2026',
-      youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
-      thumbnail: '/images/gallery-6.jpg',
-      category: 'Grow Generation Youth',
-    },
-    {
-      id: 'sermon-3',
-      title: 'Keluarga Beriman yang Berakar dalam Kasih',
-      speaker: 'Ps. Yohanes Sutono',
-      passage: 'Yosua 24:15 & Efesus 5:1-2',
-      date: 'Minggu, 9 Agustus 2026',
-      youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
-      thumbnail: '/images/gallery-5.jpg',
-      category: 'Ibadah Raya',
-    },
-  ];
+  const [sermons, setSermons] = useState<Sermon[]>(INITIAL_SERMONS);
+
+  useEffect(() => {
+    async function loadSermons() {
+      try {
+        const data = await dataStore.getSermons();
+        if (data && data.length > 0) {
+          setSermons(data);
+        }
+      } catch (err) {
+        console.warn('Error loading sermons from dataStore:', err);
+      }
+    }
+    loadSermons();
+  }, []);
 
   return (
     <section id="khotbah" className="py-24 bg-[#150B0D] text-white transition-colors relative overflow-hidden">
@@ -95,7 +81,7 @@ export default function SermonsSection() {
                 {/* Thumbnail Container */}
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#1A0E10]">
                   <Image
-                    src={sermon.thumbnail}
+                    src={sermon.thumbnail || '/images/gallery-2.jpg'}
                     alt={sermon.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"

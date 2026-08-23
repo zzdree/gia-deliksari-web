@@ -1,10 +1,20 @@
-import { Announcement, ServantRoster, InventoryItem } from '@/types';
-import { INITIAL_ANNOUNCEMENTS, INITIAL_ROSTER, INITIAL_INVENTORY } from './seedData';
+import { Announcement, ServantRoster, InventoryItem, Sermon, GalleryItem, MinistryRequest } from '@/types';
+import { 
+  INITIAL_ANNOUNCEMENTS, 
+  INITIAL_ROSTER, 
+  INITIAL_INVENTORY, 
+  INITIAL_SERMONS, 
+  INITIAL_GALLERY, 
+  INITIAL_MINISTRY_REQUESTS 
+} from './seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const ANNOUNCEMENTS_KEY = 'gia_deliksari_announcements_v1';
 const ROSTER_KEY = 'gia_deliksari_roster_v1';
 const INVENTORY_KEY = 'gia_deliksari_inventory_v1';
+const SERMONS_KEY = 'gia_deliksari_sermons_v1';
+const GALLERY_KEY = 'gia_deliksari_gallery_v1';
+const REQUESTS_KEY = 'gia_deliksari_requests_v1';
 
 // Mappers for Announcements
 function toAnnouncementModel(db: any): Announcement {
@@ -95,6 +105,84 @@ function toInventoryDB(model: InventoryItem) {
     notes: model.notes,
     last_checked_at: model.lastCheckedAt,
     checked_by: model.checkedBy,
+  };
+}
+
+// Mappers for Sermons
+function toSermonModel(db: any): Sermon {
+  return {
+    id: db.id,
+    title: db.title,
+    speaker: db.speaker,
+    passage: db.passage,
+    date: db.date,
+    youtubeUrl: db.youtube_url || db.youtubeUrl,
+    thumbnail: db.thumbnail || '/images/gallery-2.jpg',
+    category: db.category || 'Ibadah Raya',
+    createdAt: db.created_at || db.createdAt,
+  };
+}
+
+function toSermonDB(model: Sermon) {
+  return {
+    id: model.id.startsWith('srm-') ? undefined : model.id,
+    title: model.title,
+    speaker: model.speaker,
+    passage: model.passage,
+    date: model.date,
+    youtube_url: model.youtubeUrl,
+    thumbnail: model.thumbnail,
+    category: model.category,
+  };
+}
+
+// Mappers for Gallery
+function toGalleryModel(db: any): GalleryItem {
+  return {
+    id: db.id,
+    title: db.title,
+    category: db.category || 'ibadah',
+    image: db.image || db.imageUrl || '/images/gallery-1.jpg',
+    date: db.date,
+    createdAt: db.created_at || db.createdAt,
+  };
+}
+
+function toGalleryDB(model: GalleryItem) {
+  return {
+    id: model.id.startsWith('gal-') ? undefined : model.id,
+    title: model.title,
+    category: model.category,
+    image: model.image,
+    date: model.date,
+  };
+}
+
+// Mappers for Ministry Requests
+function toRequestModel(db: any): MinistryRequest {
+  return {
+    id: db.id,
+    type: db.type,
+    name: db.name,
+    phone: db.phone,
+    subType: db.sub_type || db.subType,
+    message: db.message,
+    needPastoralVisit: db.need_pastoral_visit ?? db.needPastoralVisit ?? false,
+    status: db.status || 'new',
+    createdAt: db.created_at || db.createdAt || new Date().toISOString(),
+  };
+}
+
+function toRequestDB(model: MinistryRequest) {
+  return {
+    id: model.id.startsWith('req-') ? undefined : model.id,
+    type: model.type,
+    name: model.name,
+    phone: model.phone,
+    sub_type: model.subType,
+    message: model.message,
+    need_pastoral_visit: model.needPastoralVisit,
+    status: model.status,
   };
 }
 
@@ -233,6 +321,162 @@ export const dataStore = {
         await supabase.from('inventory_items').upsert(dbItems);
       } catch (err) {
         console.warn('Supabase upsert inventory failed:', err);
+      }
+    }
+  },
+
+  // Sermons
+  getSermons: async (): Promise<Sermon[]> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('sermons')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          const list = data.map(toSermonModel);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(SERMONS_KEY, JSON.stringify(list));
+          }
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch sermons error, using local storage:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem(SERMONS_KEY);
+      if (local) {
+        try {
+          return JSON.parse(local);
+        } catch {}
+      }
+      localStorage.setItem(SERMONS_KEY, JSON.stringify(INITIAL_SERMONS));
+    }
+    return INITIAL_SERMONS;
+  },
+
+  saveSermons: async (items: Sermon[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SERMONS_KEY, JSON.stringify(items));
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const dbItems = items.map(toSermonDB);
+        await supabase.from('sermons').upsert(dbItems);
+      } catch (err) {
+        console.warn('Supabase upsert sermons failed:', err);
+      }
+    }
+  },
+
+  // Gallery
+  getGallery: async (): Promise<GalleryItem[]> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('gallery_items')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          const list = data.map(toGalleryModel);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(GALLERY_KEY, JSON.stringify(list));
+          }
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch gallery error, using local storage:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem(GALLERY_KEY);
+      if (local) {
+        try {
+          return JSON.parse(local);
+        } catch {}
+      }
+      localStorage.setItem(GALLERY_KEY, JSON.stringify(INITIAL_GALLERY));
+    }
+    return INITIAL_GALLERY;
+  },
+
+  saveGallery: async (items: GalleryItem[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(GALLERY_KEY, JSON.stringify(items));
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const dbItems = items.map(toGalleryDB);
+        await supabase.from('gallery_items').upsert(dbItems);
+      } catch (err) {
+        console.warn('Supabase upsert gallery failed:', err);
+      }
+    }
+  },
+
+  // Ministry Requests (Doa, Baptisan, Komsel, Volunteer)
+  getMinistryRequests: async (): Promise<MinistryRequest[]> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('ministry_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          const list = data.map(toRequestModel);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(REQUESTS_KEY, JSON.stringify(list));
+          }
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch ministry requests error, using local storage:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem(REQUESTS_KEY);
+      if (local) {
+        try {
+          return JSON.parse(local);
+        } catch {}
+      }
+      localStorage.setItem(REQUESTS_KEY, JSON.stringify(INITIAL_MINISTRY_REQUESTS));
+    }
+    return INITIAL_MINISTRY_REQUESTS;
+  },
+
+  saveMinistryRequest: async (item: MinistryRequest) => {
+    let list: MinistryRequest[] = [];
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem(REQUESTS_KEY);
+      list = local ? JSON.parse(local) : INITIAL_MINISTRY_REQUESTS;
+      list = [item, ...list.filter(r => r.id !== item.id)];
+      localStorage.setItem(REQUESTS_KEY, JSON.stringify(list));
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('ministry_requests').upsert([toRequestDB(item)]);
+      } catch (err) {
+        console.warn('Supabase upsert ministry request failed:', err);
+      }
+    }
+    return list;
+  },
+
+  updateMinistryRequests: async (items: MinistryRequest[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(REQUESTS_KEY, JSON.stringify(items));
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const dbItems = items.map(toRequestDB);
+        await supabase.from('ministry_requests').upsert(dbItems);
+      } catch (err) {
+        console.warn('Supabase upsert ministry requests list failed:', err);
       }
     }
   }
