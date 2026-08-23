@@ -50,9 +50,14 @@ import {
   Clock,
   Check,
   MessageSquare,
-  Play
+  Play,
+  HardDrive,
+  FolderOpen,
+  Upload,
+  Radio
 } from 'lucide-react';
 import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
+import UploadPhotoModal from '@/components/UploadPhotoModal';
 
 const ADMIN_PASSWORD_DEFAULT = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '9900';
 
@@ -150,6 +155,8 @@ export default function AdminPage() {
 
   // Gallery Modal
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [isUploadPhotoModalOpen, setIsUploadPhotoModalOpen] = useState(false);
+  const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
   const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState<{
     title: string;
@@ -386,6 +393,27 @@ export default function AdminPage() {
       setSermons(updated);
       await dataStore.saveSermons(updated);
       showToast('Khotbah berhasil dihapus');
+    }
+  };
+
+  const handleSyncYouTube = async () => {
+    setIsSyncingYouTube(true);
+    try {
+      const res = await fetch('/api/youtube/latest');
+      const data = await res.json();
+      if (data.sermons && data.sermons.length > 0) {
+        setSermons(data.sermons);
+        await dataStore.saveSermons(data.sermons);
+        if (data.source === 'youtube_api') {
+          showToast(`Berhasil sinkronisasi ${data.sermons.length} video terbaru dari YouTube API`);
+        } else {
+          showToast('Sinkronisasi selesai (menggunakan data cadangan/kurasi)');
+        }
+      }
+    } catch (err) {
+      showToast('Gagal sinkronisasi YouTube Data API');
+    } finally {
+      setIsSyncingYouTube(false);
     }
   };
 
@@ -1118,7 +1146,7 @@ export default function AdminPage() {
         {/* ========================================================================= */}
         {activeTab === 'media' && (
           <div className="space-y-6 animate-in fade-in">
-            {/* Sub-tab toggle */}
+            {/* Sub-tab toggle & Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2 p-1.5 bg-[#F7F2E8] dark:bg-[#221215] rounded-2xl border border-[#EBDDCF] dark:border-[#3A1C20] w-fit">
                 <button
@@ -1146,43 +1174,68 @@ export default function AdminPage() {
               </div>
 
               {mediaSubTab === 'sermons' ? (
-                <button
-                  onClick={() => {
-                    setEditingSermonId(null);
-                    setSermonForm({
-                      title: '',
-                      speaker: 'Ps. Yohanes Sutono',
-                      passage: '',
-                      date: 'Minggu, 30 Agustus 2026',
-                      youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
-                      thumbnail: '/images/gallery-2.jpg',
-                      category: 'Ibadah Raya',
-                    });
-                    setIsSermonModalOpen(true);
-                  }}
-                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Khotbah</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleSyncYouTube}
+                    disabled={isSyncingYouTube}
+                    className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] hover:bg-[#EBDDCF] dark:hover:bg-[#331418] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-[#C5222E] ${isSyncingYouTube ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingYouTube ? 'Sinkronisasi...' : 'Tarik dari YouTube Data API'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setEditingSermonId(null);
+                      setSermonForm({
+                        title: '',
+                        speaker: 'Ps. Yohanes Sutono',
+                        passage: '',
+                        date: 'Minggu, 30 Agustus 2026',
+                        youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+                        thumbnail: '/images/gallery-2.jpg',
+                        category: 'Ibadah Raya',
+                      });
+                      setIsSermonModalOpen(true);
+                    }}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Khotbah Manual</span>
+                  </button>
+                </div>
               ) : (
-                <button
-                  onClick={() => {
-                    setEditingGalleryId(null);
-                    setGalleryForm({
-                      title: '',
-                      category: 'ibadah',
-                      image: '/images/gallery-1.jpg',
-                      date: 'Agustus 2026',
-                    });
-                    setIsGalleryModalOpen(true);
-                  }}
-                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Foto Galeri</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href="https://drive.google.com/drive/folders/1GIADeliksariSemarangArchive"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] hover:bg-[#EBDDCF] dark:hover:bg-[#331418] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold transition-all flex items-center gap-2"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-[#C59B27]" />
+                    <span>Arsip Google Drive</span>
+                    <ExternalLink className="w-3 h-3 text-stone-400" />
+                  </a>
+
+                  <button
+                    onClick={() => setIsUploadPhotoModalOpen(true)}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Foto ke Cloud</span>
+                  </button>
+                </div>
               )}
+            </div>
+
+            {/* Storage Info Banner */}
+            <div className="p-4 rounded-2xl bg-[#FEF9EC] dark:bg-[#332612] border border-[#F8E3B5] dark:border-[#543E19] flex items-center justify-between gap-3 text-xs text-[#B87A14] dark:text-[#F0BE5E]">
+              <div className="flex items-center gap-2.5">
+                <HardDrive className="w-4 h-4 shrink-0" />
+                <span>
+                  <strong>Arsitektur Hybrid Rolling Storage</strong>: Master foto diarsipkan selamanya di Google Drive. Galeri web menyimpan 50 foto terkini secara instan &amp; hemat kuota (di bawah 100 MB).
+                </span>
+              </div>
             </div>
 
             {/* Sermons CMS List */}
@@ -2162,6 +2215,16 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Upload Photo Modal */}
+      <UploadPhotoModal
+        isOpen={isUploadPhotoModalOpen}
+        onClose={() => setIsUploadPhotoModalOpen(false)}
+        onUploadSuccess={(newItem) => {
+          setGallery((prev) => [newItem, ...prev]);
+          showToast('Foto dokumentasi berhasil ditambahkan ke galeri!');
+        }}
+      />
 
       <Footer />
     </main>

@@ -9,7 +9,9 @@ import {
   User, 
   BookOpen, 
   Sparkles,
-  Radio
+  Radio,
+  RefreshCw,
+  Tv
 } from 'lucide-react';
 import { YouTubeIcon } from './Icons';
 import { dataStore } from '@/lib/storage';
@@ -18,9 +20,28 @@ import { INITIAL_SERMONS } from '@/lib/seedData';
 
 export default function SermonsSection() {
   const [sermons, setSermons] = useState<Sermon[]>(INITIAL_SERMONS);
+  const [isLiveSync, setIsLiveSync] = useState(false);
 
   useEffect(() => {
     async function loadSermons() {
+      // 1. Try fetching from YouTube Data API v3 route
+      try {
+        const res = await fetch('/api/youtube/latest');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sermons && data.sermons.length > 0) {
+            setSermons(data.sermons);
+            if (data.source === 'youtube_api') {
+              setIsLiveSync(true);
+            }
+            return;
+          }
+        }
+      } catch (ytErr) {
+        console.warn('YouTube API fetch skipped, trying dataStore:', ytErr);
+      }
+
+      // 2. Fallback to Supabase / Local DataStore
       try {
         const data = await dataStore.getSermons();
         if (data && data.length > 0) {
@@ -44,10 +65,20 @@ export default function SermonsSection() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
           <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#331418] border border-[#521E25] text-[#F2828C] text-xs font-bold uppercase tracking-wider">
-              <Radio className="w-3.5 h-3.5 text-[#E03643]" />
-              <span>Mimbar & Pengajaran Firman</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#331418] border border-[#521E25] text-[#F2828C] text-xs font-bold uppercase tracking-wider">
+                <Radio className="w-3.5 h-3.5 text-[#E03643]" />
+                <span>Mimbar & Pengajaran Firman</span>
+              </div>
+
+              {isLiveSync && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-800 text-red-300 text-xs font-bold animate-pulse">
+                  <Tv className="w-3 h-3 text-red-400" />
+                  <span>YouTube Data API v3 Live</span>
+                </div>
+              )}
             </div>
+
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               Arsip Khotbah & Renungan Rohani
             </h2>
@@ -116,7 +147,7 @@ export default function SermonsSection() {
                     <span>{sermon.date}</span>
                   </div>
 
-                  <h3 className="text-xl font-extrabold text-white group-hover:text-[#E03643] transition-colors leading-snug">
+                  <h3 className="text-xl font-extrabold text-white group-hover:text-[#E03643] transition-colors leading-snug line-clamp-2">
                     {sermon.title}
                   </h3>
 
@@ -127,7 +158,7 @@ export default function SermonsSection() {
                     </div>
                     <div className="flex items-center gap-2 text-[#B5A1A3]">
                       <BookOpen className="w-3.5 h-3.5 text-[#E03643] shrink-0" />
-                      <span>{sermon.passage}</span>
+                      <span className="line-clamp-1">{sermon.passage}</span>
                     </div>
                   </div>
                 </div>
