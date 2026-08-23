@@ -17,10 +17,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File gambar wajib diunggah' }, { status: 400 });
     }
 
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+    // Security Check 1: Max file size (5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'Ukuran file melebihi batas maksimum 5MB' }, { status: 400 });
+    }
+
+    // Security Check 2: MIME type whitelist
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'Format file tidak didukung. Harap unggah format JPG, PNG, WEBP, atau GIF.' }, { status: 400 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Security Check 3: Magic Bytes Verification
+    const isJpeg = buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+    const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+    const isGif = buffer.length > 3 && buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46;
+    const isWebp = buffer.length > 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+
+    if (!isJpeg && !isPng && !isGif && !isWebp) {
+      return NextResponse.json({ error: 'Header file tidak valid untuk format gambar yang diizinkan.' }, { status: 400 });
+    }
+
+    const validExts: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+    const fileExt = validExts[file.type] || 'jpg';
+    const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
 
     let imageUrl = '';
 

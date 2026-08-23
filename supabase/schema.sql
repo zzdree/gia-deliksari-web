@@ -53,12 +53,20 @@ alter table announcements enable row level security;
 alter table servant_rosters enable row level security;
 alter table inventory_items enable row level security;
 
--- Public Read Policies
+-- Public Read Policies (Allow anon & authenticated to view published data)
 create policy "Allow public read announcements" on announcements for select using (true);
 create policy "Allow public read rosters" on servant_rosters for select using (true);
 create policy "Allow public read inventory" on inventory_items for select using (true);
 
--- Authenticated Full Access Policies
-create policy "Allow all actions for announcements" on announcements for all using (true) with check (true);
-create policy "Allow all actions for rosters" on servant_rosters for all using (true) with check (true);
-create policy "Allow all actions for inventory" on inventory_items for all using (true) with check (true);
+-- Authenticated / Service Role Mutation Policies (Only logged-in admins or server can mutate)
+create policy "Allow authenticated insert announcements" on announcements for insert to authenticated, service_role with check (true);
+create policy "Allow authenticated update announcements" on announcements for update to authenticated, service_role using (true) with check (true);
+create policy "Allow authenticated delete announcements" on announcements for delete to authenticated, service_role using (true);
+
+create policy "Allow authenticated insert rosters" on servant_rosters for insert to authenticated, service_role with check (true);
+create policy "Allow authenticated update rosters" on servant_rosters for update to authenticated, service_role using (true) with check (true);
+create policy "Allow authenticated delete rosters" on servant_rosters for delete to authenticated, service_role using (true);
+
+create policy "Allow authenticated insert inventory" on inventory_items for insert to authenticated, service_role with check (true);
+create policy "Allow authenticated update inventory" on inventory_items for update to authenticated, service_role using (true) with check (true);
+create policy "Allow authenticated delete inventory" on inventory_items for delete to authenticated, service_role using (true);

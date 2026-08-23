@@ -59,8 +59,6 @@ import {
 import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
 import UploadPhotoModal from '@/components/UploadPhotoModal';
 
-const ADMIN_PASSWORD_DEFAULT = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '9900';
-
 export default function AdminPage() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -237,6 +235,18 @@ export default function AdminPage() {
     }
   };
 
+  // Check session cookie on mount
+  useEffect(() => {
+    fetch('/api/auth/check')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadAllData();
@@ -244,21 +254,32 @@ export default function AdminPage() {
   }, [isAuthenticated]);
 
   // Auth Handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD_DEFAULT) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('gia_admin_authenticated', 'true');
-      setAuthError(null);
-      showToast('Login Berhasil! Selamat Datang Majelis GIA Deliksari');
-    } else {
-      setAuthError('Password salah. Silakan periksa kembali kata sandi pengurus.');
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        showToast('Login Berhasil! Selamat Datang Majelis GIA Deliksari');
+      } else {
+        setAuthError(data.error || 'Password salah. Silakan periksa kembali kata sandi pengurus.');
+      }
+    } catch (err) {
+      setAuthError('Terjadi kesalahan koneksi saat memverifikasi login.');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
     setIsAuthenticated(false);
-    sessionStorage.removeItem('gia_admin_authenticated');
     setPasswordInput('');
     showToast('Berhasil logout dari Portal Admin');
   };
