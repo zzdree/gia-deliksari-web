@@ -67,21 +67,31 @@ export default function AnnouncementBoard() {
     }
   };
 
-  const filteredAnnouncements = announcements.filter((item) => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    
-    const now = new Date();
-    const eventDate = new Date(item.eventDate);
-    
-    let matchesTime = true;
-    if (timeFilter === 'upcoming') {
-      matchesTime = eventDate >= new Date(now.setHours(0, 0, 0, 0));
-    } else if (timeFilter === 'past') {
-      matchesTime = eventDate < new Date(now.setHours(0, 0, 0, 0));
-    }
+  const filteredAnnouncements = announcements
+    .filter((item) => {
+      // Hanya tampilkan pengumuman yang dipublikasikan
+      if (item.isPublished === false) return false;
 
-    return matchesCategory && matchesTime;
-  });
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      
+      const now = new Date();
+      const eventDate = new Date(item.eventDate);
+      
+      let matchesTime = true;
+      if (timeFilter === 'upcoming') {
+        matchesTime = eventDate >= new Date(now.setHours(0, 0, 0, 0));
+      } else if (timeFilter === 'past') {
+        matchesTime = eventDate < new Date(now.setHours(0, 0, 0, 0));
+      }
+
+      return matchesCategory && matchesTime;
+    })
+    .sort((a, b) => {
+      // Sematkan yang di-pin di bagian atas
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
+    });
 
   return (
     <section id="warta" className="py-24 bg-[#FDFBF7] dark:bg-[#150B0D] transition-colors">

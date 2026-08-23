@@ -21,6 +21,7 @@ import { ServantRoster } from '@/types';
 
 export default function ScheduleSection() {
   const [roster, setRoster] = useState<ServantRoster[]>(INITIAL_ROSTER);
+  const [selectedRosterCategory, setSelectedRosterCategory] = useState<'all' | 'general' | 'youth' | 'kidz' | 'hana'>('all');
 
   useEffect(() => {
     const loadRoster = async () => {
@@ -211,42 +212,100 @@ export default function ScheduleSection() {
             </a>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-[#EBDDCF] dark:border-[#3A1C20] text-[#6E5D5F] dark:text-[#B5A1A3]">
-                  <th className="pb-3 font-bold">Kategori</th>
-                  <th className="pb-3 font-bold">Tanggal</th>
-                  <th className="pb-3 font-bold">Tugas / Peran</th>
-                  <th className="pb-3 font-bold">Nama Pelayan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EBDDCF]/60 dark:divide-[#3A1C20]/60">
-                {roster.slice(0, 6).map((item) => (
-                  <tr key={item.id} className="hover:bg-[#FDFBF7] dark:hover:bg-[#2A161A] transition-colors">
-                    <td className="py-3.5 pr-3 font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                      {item.serviceCategory === 'general'
-                        ? 'Ibadah Raya'
-                        : item.serviceCategory === 'youth'
-                        ? 'Grow Youth'
-                        : item.serviceCategory === 'kidz'
-                        ? 'COC Kidz'
-                        : 'Hana & Komsel'}
-                    </td>
-                    <td className="py-3.5 pr-3 text-[#5A4D4E] dark:text-[#D5C2C4] font-mono">
-                      {item.serviceDate}
-                    </td>
-                    <td className="py-3.5 pr-3 font-semibold text-[#C5222E] dark:text-[#E03643]">
-                      {item.role}
-                    </td>
-                    <td className="py-3.5 text-[#1F1617] dark:text-[#F5EFEB]">
-                      {item.servantName}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Roster Category Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: 'all', label: 'Semua Komunitas' },
+              { id: 'general', label: 'Ibadah Raya' },
+              { id: 'youth', label: 'Grow Youth' },
+              { id: 'kidz', label: 'COC Kidz' },
+              { id: 'hana', label: 'Wanita Hana & Komsel' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedRosterCategory(tab.id as any)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  selectedRosterCategory === tab.id
+                    ? 'bg-[#C5222E] text-white shadow-xs'
+                    : 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-[#EFE6D5] dark:hover:bg-[#33181E] border border-[#EBDDCF] dark:border-[#3A1C20]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
+
+          {/* Table */}
+          {(() => {
+            const filteredRoster = roster
+              .filter((item) => selectedRosterCategory === 'all' || item.serviceCategory === selectedRosterCategory)
+              .sort((a, b) => new Date(a.serviceDate).getTime() - new Date(b.serviceDate).getTime());
+
+            if (filteredRoster.length === 0) {
+              return (
+                <div className="py-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
+                  Belum ada jadwal petugas pelayanan untuk kategori ini.
+                </div>
+              );
+            }
+
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-[#EBDDCF] dark:border-[#3A1C20] text-[#6E5D5F] dark:text-[#B5A1A3]">
+                      <th className="pb-3 font-bold">Kategori</th>
+                      <th className="pb-3 font-bold">Tanggal</th>
+                      <th className="pb-3 font-bold">Tugas / Peran</th>
+                      <th className="pb-3 font-bold">Nama Pelayan</th>
+                      <th className="pb-3 font-bold text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EBDDCF]/60 dark:divide-[#3A1C20]/60">
+                    {filteredRoster.map((item) => (
+                      <tr key={item.id} className="hover:bg-[#FDFBF7] dark:hover:bg-[#2A161A] transition-colors">
+                        <td className="py-3.5 pr-3 font-bold text-[#1F1617] dark:text-[#F5EFEB]">
+                          {item.serviceCategory === 'general'
+                            ? 'Ibadah Raya'
+                            : item.serviceCategory === 'youth'
+                            ? 'Grow Youth'
+                            : item.serviceCategory === 'kidz'
+                            ? 'COC Kidz'
+                            : 'Hana & Komsel'}
+                        </td>
+                        <td className="py-3.5 pr-3 text-[#5A4D4E] dark:text-[#D5C2C4] font-mono">
+                          {item.serviceDate}
+                        </td>
+                        <td className="py-3.5 pr-3 font-semibold text-[#C5222E] dark:text-[#E03643]">
+                          {item.role}
+                        </td>
+                        <td className="py-3.5 pr-3 text-[#1F1617] dark:text-[#F5EFEB]">
+                          {item.servantName}
+                        </td>
+                        <td className="py-3.5 text-right">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              item.status === 'confirmed'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                                : item.status === 'replacement'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/40 dark:text-slate-300 dark:border-slate-800/60'
+                            }`}
+                          >
+                            {item.status === 'confirmed'
+                              ? 'Siap Melayani'
+                              : item.status === 'replacement'
+                              ? 'Pengganti'
+                              : 'Menunggu'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
 
       </div>
