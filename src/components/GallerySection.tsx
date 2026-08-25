@@ -25,7 +25,7 @@ export default function GallerySection() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const googleDriveFolderUrl = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_GALLERY_URL || 'https://drive.google.com/drive/folders/1GIADeliksariSemarangArchive';
+  const googleDriveFolderUrl = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_GALLERY_URL || 'https://drive.google.com/drive/folders/1T_ahqCtmOjdFl0L-MNu7bIQo-8Oz8y9h';
 
   useEffect(() => {
     async function loadGallery() {

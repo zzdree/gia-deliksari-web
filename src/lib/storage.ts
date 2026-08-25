@@ -1,11 +1,11 @@
 import { Announcement, ServantRoster, InventoryItem, Sermon, GalleryItem, MinistryRequest } from '@/types';
-import { 
-  INITIAL_ANNOUNCEMENTS, 
-  INITIAL_ROSTER, 
-  INITIAL_INVENTORY, 
-  INITIAL_SERMONS, 
-  INITIAL_GALLERY, 
-  INITIAL_MINISTRY_REQUESTS 
+import {
+  INITIAL_ANNOUNCEMENTS,
+  INITIAL_ROSTER,
+  INITIAL_INVENTORY,
+  INITIAL_SERMONS,
+  INITIAL_GALLERY,
+  INITIAL_MINISTRY_REQUESTS
 } from './seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -16,7 +16,10 @@ const SERMONS_KEY = 'gia_deliksari_sermons_v1';
 const GALLERY_KEY = 'gia_deliksari_gallery_v1';
 const REQUESTS_KEY = 'gia_deliksari_requests_v1';
 
-// Mappers for Announcements
+// ============================================================================
+// MAPPERS (DB snake_case <-> App models)
+// ============================================================================
+
 function toAnnouncementModel(db: any): Announcement {
   return {
     id: db.id,
@@ -46,7 +49,6 @@ function toAnnouncementDB(model: Announcement) {
   };
 }
 
-// Mappers for Servant Roster
 function toRosterModel(db: any): ServantRoster {
   return {
     id: db.id,
@@ -74,7 +76,6 @@ function toRosterDB(model: ServantRoster) {
   };
 }
 
-// Mappers for Inventory
 function toInventoryModel(db: any): InventoryItem {
   return {
     id: db.id,
@@ -108,7 +109,6 @@ function toInventoryDB(model: InventoryItem) {
   };
 }
 
-// Mappers for Sermons
 function toSermonModel(db: any): Sermon {
   return {
     id: db.id,
@@ -136,7 +136,6 @@ function toSermonDB(model: Sermon) {
   };
 }
 
-// Mappers for Gallery
 function toGalleryModel(db: any): GalleryItem {
   return {
     id: db.id,
@@ -158,7 +157,6 @@ function toGalleryDB(model: GalleryItem) {
   };
 }
 
-// Mappers for Ministry Requests
 function toRequestModel(db: any): MinistryRequest {
   return {
     id: db.id,
@@ -175,7 +173,7 @@ function toRequestModel(db: any): MinistryRequest {
 
 function toRequestDB(model: MinistryRequest) {
   return {
-    id: model.id.startsWith('req-') ? undefined : model.id,
+    id: typeof model.id === 'string' && model.id.startsWith('req-') ? undefined : model.id,
     type: model.type,
     name: model.name,
     phone: model.phone,
@@ -186,298 +184,204 @@ function toRequestDB(model: MinistryRequest) {
   };
 }
 
+// ============================================================================
+// SHARED HELPERS
+// ============================================================================
+
+type AnyModel = Announcement | ServantRoster | InventoryItem | Sermon | GalleryItem | MinistryRequest;
+
+async function readViaApi<T>(
+  endpoint: string,
+  cacheKey: string,
+  mapper: (db: any) => T,
+  fallbackSeed: T[],
+): Promise<T[]> {
+  // 1. Primary source: server API (public sanitized or admin session-gated)
+  try {
+    const res = await fetch(endpoint, { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.items) && json.items.length > 0) {
+        const list = json.items.map(mapper);
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch {}
+        }
+        return list;
+      }
+    }
+  } catch (err) {
+    console.warn(`Fetch ${endpoint} failed, falling back:`, err);
+  }
+
+  // 2. Legacy direct-Supabase read (works while public RLS allows SELECT)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const table = new URL(endpoint, window.location.href).searchParams.get('table');
+      const orderCol = ORDER_COLUMNS[table as string];
+      if (table && orderCol) {
+        const { data, error } = await supabase.from(table).select('*').order(orderCol, { ascending: orderCol !== 'created_at' });
+        if (!error && data && data.length > 0) {
+          const list = data.map(mapper);
+          if (typeof window !== 'undefined') {
+            try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch {}
+          }
+          return list;
+        }
+      }
+    } catch (err) {
+      console.warn('Direct Supabase read failed, using local cache:', err);
+    }
+  }
+
+  // 3. Local cache, then bundled seed
+  if (typeof window !== 'undefined') {
+    const local = localStorage.getItem(cacheKey);
+    if (local) {
+      try { return JSON.parse(local); } catch {}
+    }
+    try { localStorage.setItem(cacheKey, JSON.stringify(fallbackSeed)); } catch {}
+  }
+  return fallbackSeed;
+}
+
+const ORDER_COLUMNS: Record<string, string> = {
+  announcements: 'event_date',
+  servant_rosters: 'service_date',
+  inventory_items: 'category',
+  sermons: 'created_at',
+  gallery_items: 'created_at',
+  ministry_requests: 'created_at',
+};
+
+async function writeViaApi(table: string, items: any[]): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table, items }),
+    });
+    if (!res.ok) {
+      console.error(`[adminDataStore] write ${table} rejected (${res.status}):`, await res.text().catch(() => ''));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`[adminDataStore] write ${table} network error:`, err);
+    return false;
+  }
+}
+
+// ============================================================================
+// PUBLIC DATA STORE — safe for visitors & shared components.
+// Reads go through the sanitized public API (no phones, no request inbox);
+// the only write is submitting one's own prayer/ministry request.
+// ============================================================================
 export const dataStore = {
-  // Announcements
-  getAnnouncements: async (): Promise<Announcement[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('announcements')
-          .select('*')
-          .order('event_date', { ascending: true });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toAnnouncementModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch announcements error, using local storage:', err);
-      }
-    }
+  getAnnouncements: (): Promise<Announcement[]> =>
+    readViaApi<Announcement>('/api/public/data?table=announcements', ANNOUNCEMENTS_KEY, toAnnouncementModel, INITIAL_ANNOUNCEMENTS),
 
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(ANNOUNCEMENTS_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(INITIAL_ANNOUNCEMENTS));
-    }
-    return INITIAL_ANNOUNCEMENTS;
-  },
+  getRoster: (): Promise<ServantRoster[]> =>
+    readViaApi<ServantRoster>('/api/public/data?table=servant_rosters', ROSTER_KEY, toRosterModel, INITIAL_ROSTER),
 
-  saveAnnouncements: async (items: Announcement[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(items));
-    }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toAnnouncementDB);
-        await supabase.from('announcements').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert announcements failed:', err);
-      }
-    }
-  },
+  getSermons: (): Promise<Sermon[]> =>
+    readViaApi<Sermon>('/api/public/data?table=sermons', SERMONS_KEY, toSermonModel, INITIAL_SERMONS),
 
-  // Servant Roster
-  getRoster: async (): Promise<ServantRoster[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('servant_rosters')
-          .select('*')
-          .order('service_date', { ascending: true });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toRosterModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(ROSTER_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch roster error, using local storage:', err);
-      }
-    }
+  getGallery: (): Promise<GalleryItem[]> =>
+    readViaApi<GalleryItem>('/api/public/data?table=gallery_items', GALLERY_KEY, toGalleryModel, INITIAL_GALLERY),
 
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(ROSTER_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(ROSTER_KEY, JSON.stringify(INITIAL_ROSTER));
-    }
-    return INITIAL_ROSTER;
-  },
-
-  saveRoster: async (items: ServantRoster[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ROSTER_KEY, JSON.stringify(items));
-    }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toRosterDB);
-        await supabase.from('servant_rosters').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert roster failed:', err);
-      }
-    }
-  },
-
-  // Inventory
-  getInventory: async (): Promise<InventoryItem[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('inventory_items')
-          .select('*')
-          .order('category', { ascending: true });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toInventoryModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(INVENTORY_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch inventory error, using local storage:', err);
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(INVENTORY_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(INVENTORY_KEY, JSON.stringify(INITIAL_INVENTORY));
-    }
-    return INITIAL_INVENTORY;
-  },
-
-  saveInventory: async (items: InventoryItem[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(INVENTORY_KEY, JSON.stringify(items));
-    }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toInventoryDB);
-        await supabase.from('inventory_items').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert inventory failed:', err);
-      }
-    }
-  },
-
-  // Sermons
-  getSermons: async (): Promise<Sermon[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('sermons')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toSermonModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(SERMONS_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch sermons error, using local storage:', err);
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(SERMONS_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(SERMONS_KEY, JSON.stringify(INITIAL_SERMONS));
-    }
-    return INITIAL_SERMONS;
-  },
-
-  saveSermons: async (items: Sermon[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SERMONS_KEY, JSON.stringify(items));
-    }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toSermonDB);
-        await supabase.from('sermons').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert sermons failed:', err);
-      }
-    }
-  },
-
-  // Gallery
-  getGallery: async (): Promise<GalleryItem[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('gallery_items')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toGalleryModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(GALLERY_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch gallery error, using local storage:', err);
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(GALLERY_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(GALLERY_KEY, JSON.stringify(INITIAL_GALLERY));
-    }
-    return INITIAL_GALLERY;
-  },
-
-  saveGallery: async (items: GalleryItem[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(GALLERY_KEY, JSON.stringify(items));
-    }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toGalleryDB);
-        await supabase.from('gallery_items').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert gallery failed:', err);
-      }
-    }
-  },
-
-  // Ministry Requests (Doa, Baptisan, Komsel, Volunteer)
-  getMinistryRequests: async (): Promise<MinistryRequest[]> => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('ministry_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
-          const list = data.map(toRequestModel);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(REQUESTS_KEY, JSON.stringify(list));
-          }
-          return list;
-        }
-      } catch (err) {
-        console.warn('Supabase fetch ministry requests error, using local storage:', err);
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem(REQUESTS_KEY);
-      if (local) {
-        try {
-          return JSON.parse(local);
-        } catch {}
-      }
-      localStorage.setItem(REQUESTS_KEY, JSON.stringify(INITIAL_MINISTRY_REQUESTS));
-    }
-    return INITIAL_MINISTRY_REQUESTS;
-  },
-
-  saveMinistryRequest: async (item: MinistryRequest) => {
-    let list: MinistryRequest[] = [];
+  /** Public form submission — validated & rate-limited server-side. */
+  saveMinistryRequest: async (item: MinistryRequest): Promise<boolean> => {
+    let list: MinistryRequest[] = INITIAL_MINISTRY_REQUESTS;
     if (typeof window !== 'undefined') {
       const local = localStorage.getItem(REQUESTS_KEY);
       list = local ? JSON.parse(local) : INITIAL_MINISTRY_REQUESTS;
       list = [item, ...list.filter(r => r.id !== item.id)];
-      localStorage.setItem(REQUESTS_KEY, JSON.stringify(list));
+      try { localStorage.setItem(REQUESTS_KEY, JSON.stringify(list)); } catch {}
     }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('ministry_requests').upsert([toRequestDB(item)]);
-      } catch (err) {
-        console.warn('Supabase upsert ministry request failed:', err);
+
+    try {
+      const res = await fetch('/api/public/ministry-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toRequestDB(item)),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
+      return true;
+    } catch (err) {
+      console.warn('[dataStore] ministry request submit failed:', err);
+      return false;
     }
+  },
+};
+
+// ============================================================================
+// ADMIN DATA STORE — every operation flows through /api/admin/data, which
+// enforces the signed admin session cookie server-side and uses the SERVICE
+// ROLE key. The browser never holds elevated Supabase credentials.
+// ============================================================================
+export const adminDataStore = {
+  getAnnouncements: async (): Promise<Announcement[]> => {
+    const list = await readViaApi<Announcement>('/api/admin/data?table=announcements', ANNOUNCEMENTS_KEY, toAnnouncementModel, INITIAL_ANNOUNCEMENTS);
     return list;
   },
 
+  saveAnnouncements: async (items: Announcement[]) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(items)); } catch {}
+    }
+    await writeViaApi('announcements', items.map(toAnnouncementDB));
+  },
+
+  getRoster: (): Promise<ServantRoster[]> =>
+    readViaApi<ServantRoster>('/api/admin/data?table=servant_rosters', ROSTER_KEY, toRosterModel, INITIAL_ROSTER),
+
+  saveRoster: async (items: ServantRoster[]) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(ROSTER_KEY, JSON.stringify(items)); } catch {}
+    }
+    await writeViaApi('servant_rosters', items.map(toRosterDB));
+  },
+
+  getInventory: (): Promise<InventoryItem[]> =>
+    readViaApi<InventoryItem>('/api/admin/data?table=inventory_items', INVENTORY_KEY, toInventoryModel, INITIAL_INVENTORY),
+
+  saveInventory: async (items: InventoryItem[]) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(INVENTORY_KEY, JSON.stringify(items)); } catch {}
+    }
+    await writeViaApi('inventory_items', items.map(toInventoryDB));
+  },
+
+  getSermons: (): Promise<Sermon[]> =>
+    readViaApi<Sermon>('/api/admin/data?table=sermons', SERMONS_KEY, toSermonModel, INITIAL_SERMONS),
+
+  saveSermons: async (items: Sermon[]) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(SERMONS_KEY, JSON.stringify(items)); } catch {}
+    }
+    await writeViaApi('sermons', items.map(toSermonDB));
+  },
+
+  getGallery: (): Promise<GalleryItem[]> =>
+    readViaApi<GalleryItem>('/api/admin/data?table=gallery_items', GALLERY_KEY, toGalleryModel, INITIAL_GALLERY),
+
+  saveGallery: async (items: GalleryItem[]) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(GALLERY_KEY, JSON.stringify(items)); } catch {}
+    }
+    await writeViaApi('gallery_items', items.map(toGalleryDB));
+  },
+
+  getMinistryRequests: (): Promise<MinistryRequest[]> =>
+    readViaApi<MinistryRequest>('/api/admin/data?table=ministry_requests', REQUESTS_KEY, toRequestModel, INITIAL_MINISTRY_REQUESTS),
+
   updateMinistryRequests: async (items: MinistryRequest[]) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(REQUESTS_KEY, JSON.stringify(items));
+      try { localStorage.setItem(REQUESTS_KEY, JSON.stringify(items)); } catch {}
     }
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const dbItems = items.map(toRequestDB);
-        await supabase.from('ministry_requests').upsert(dbItems);
-      } catch (err) {
-        console.warn('Supabase upsert ministry requests list failed:', err);
-      }
-    }
-  }
+    await writeViaApi('ministry_requests', items.filter(r => !r.id.startsWith('req-')).map(toRequestDB));
+  },
 };

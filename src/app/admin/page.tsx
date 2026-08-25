@@ -16,7 +16,7 @@ import {
   MinistryRequest,
   MinistryRequestType
 } from '@/types';
-import { dataStore } from '@/lib/storage';
+import { adminDataStore } from '@/lib/storage';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   Bell,
@@ -201,25 +201,17 @@ export default function AdminPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Check login session on mount
-  useEffect(() => {
-    const sessionAuth = sessionStorage.getItem('gia_admin_authenticated');
-    if (sessionAuth === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   // Fetch data
   const loadAllData = async () => {
     setLoading(true);
     try {
       const [annData, rosData, invData, srmData, galData, reqData] = await Promise.all([
-        dataStore.getAnnouncements(),
-        dataStore.getRoster(),
-        dataStore.getInventory(),
-        dataStore.getSermons(),
-        dataStore.getGallery(),
-        dataStore.getMinistryRequests()
+        adminDataStore.getAnnouncements(),
+        adminDataStore.getRoster(),
+        adminDataStore.getInventory(),
+        adminDataStore.getSermons(),
+        adminDataStore.getGallery(),
+        adminDataStore.getMinistryRequests()
       ]);
       setAnnouncements(annData);
       setRoster(rosData);
@@ -308,7 +300,7 @@ export default function AdminPage() {
       showToast('Warta Jemaat baru berhasil diterbitkan');
     }
     setAnnouncements(updated);
-    await dataStore.saveAnnouncements(updated);
+    await adminDataStore.saveAnnouncements(updated);
     setIsAnnModalOpen(false);
     setEditingAnnId(null);
   };
@@ -317,7 +309,7 @@ export default function AdminPage() {
     if (confirm('Apakah Anda yakin ingin menghapus warta jemaat ini?')) {
       const updated = announcements.filter((item) => item.id !== id);
       setAnnouncements(updated);
-      await dataStore.saveAnnouncements(updated);
+      await adminDataStore.saveAnnouncements(updated);
       showToast('Warta Jemaat berhasil dihapus');
     }
   };
@@ -327,7 +319,7 @@ export default function AdminPage() {
       a.id === item.id ? { ...a, isPinned: !a.isPinned } : a
     );
     setAnnouncements(updated);
-    await dataStore.saveAnnouncements(updated);
+    await adminDataStore.saveAnnouncements(updated);
     showToast(item.isPinned ? 'Pin warta dilepas' : 'Warta disematkan ke paling atas');
   };
 
@@ -355,7 +347,7 @@ export default function AdminPage() {
       showToast('Petugas ibadah baru berhasil ditambahkan');
     }
     setRoster(updated);
-    await dataStore.saveRoster(updated);
+    await adminDataStore.saveRoster(updated);
     setIsRosterModalOpen(false);
     setEditingRosterId(null);
   };
@@ -364,7 +356,7 @@ export default function AdminPage() {
     if (confirm('Hapus petugas pelayan ini dari roster?')) {
       const updated = roster.filter((item) => item.id !== id);
       setRoster(updated);
-      await dataStore.saveRoster(updated);
+      await adminDataStore.saveRoster(updated);
       showToast('Petugas berhasil dihapus dari jadwal');
     }
   };
@@ -373,7 +365,7 @@ export default function AdminPage() {
   const handleUpdateRequestStatus = async (id: string, status: 'new' | 'in_progress' | 'completed') => {
     const updated = requests.map(r => r.id === id ? { ...r, status } : r);
     setRequests(updated);
-    await dataStore.updateMinistryRequests(updated);
+    await adminDataStore.updateMinistryRequests(updated);
     showToast('Status permohonan berhasil diperbarui');
   };
 
@@ -381,7 +373,7 @@ export default function AdminPage() {
     if (confirm('Hapus riwayat permohonan jemaat ini?')) {
       const updated = requests.filter(r => r.id !== id);
       setRequests(updated);
-      await dataStore.updateMinistryRequests(updated);
+      await adminDataStore.updateMinistryRequests(updated);
       showToast('Permohonan berhasil dihapus');
     }
   };
@@ -403,7 +395,7 @@ export default function AdminPage() {
       showToast('Khotbah baru berhasil ditambahkan');
     }
     setSermons(updated);
-    await dataStore.saveSermons(updated);
+    await adminDataStore.saveSermons(updated);
     setIsSermonModalOpen(false);
     setEditingSermonId(null);
   };
@@ -412,7 +404,7 @@ export default function AdminPage() {
     if (confirm('Hapus arsip khotbah ini?')) {
       const updated = sermons.filter(s => s.id !== id);
       setSermons(updated);
-      await dataStore.saveSermons(updated);
+      await adminDataStore.saveSermons(updated);
       showToast('Khotbah berhasil dihapus');
     }
   };
@@ -423,10 +415,17 @@ export default function AdminPage() {
       const res = await fetch('/api/youtube/latest');
       const data = await res.json();
       if (data.sermons && data.sermons.length > 0) {
-        setSermons(data.sermons);
-        await dataStore.saveSermons(data.sermons);
+        // MERGE, not replace: keep manually curated sermons (srm-* ids),
+        // upsert YouTube items by their stable yt id, newest first.
+        const incoming: Sermon[] = data.sermons;
+        const manual = sermons.filter((s) => !incoming.some((v) => v.id === s.id));
+        const merged = [...incoming, ...manual].sort(
+          (a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''),
+        );
+        setSermons(merged);
+        await adminDataStore.saveSermons(merged);
         if (data.source === 'youtube_api') {
-          showToast(`Berhasil sinkronisasi ${data.sermons.length} video terbaru dari YouTube API`);
+          showToast(`Sinkronisasi ${incoming.length} video terbaru — khotbah manual tetap aman`);
         } else {
           showToast('Sinkronisasi selesai (menggunakan data cadangan/kurasi)');
         }
@@ -455,7 +454,7 @@ export default function AdminPage() {
       showToast('Foto galeri berhasil ditambahkan');
     }
     setGallery(updated);
-    await dataStore.saveGallery(updated);
+    await adminDataStore.saveGallery(updated);
     setIsGalleryModalOpen(false);
     setEditingGalleryId(null);
   };
@@ -464,7 +463,7 @@ export default function AdminPage() {
     if (confirm('Hapus foto ini dari galeri?')) {
       const updated = gallery.filter(g => g.id !== id);
       setGallery(updated);
-      await dataStore.saveGallery(updated);
+      await adminDataStore.saveGallery(updated);
       showToast('Foto galeri berhasil dihapus');
     }
   };
@@ -482,7 +481,7 @@ export default function AdminPage() {
         : inv
     );
     setInventory(updated);
-    await dataStore.saveInventory(updated);
+    await adminDataStore.saveInventory(updated);
   };
 
   const handleSaveInventory = async (e: React.FormEvent) => {
@@ -511,7 +510,7 @@ export default function AdminPage() {
       showToast('Barang inventaris baru berhasil ditambahkan');
     }
     setInventory(updated);
-    await dataStore.saveInventory(updated);
+    await adminDataStore.saveInventory(updated);
     setIsInvModalOpen(false);
     setEditingInvId(null);
   };
@@ -520,7 +519,7 @@ export default function AdminPage() {
     if (confirm('Hapus barang ini dari daftar inventaris gereja?')) {
       const updated = inventory.filter((inv) => inv.id !== id);
       setInventory(updated);
-      await dataStore.saveInventory(updated);
+      await adminDataStore.saveInventory(updated);
       showToast('Barang inventaris berhasil dihapus');
     }
   };
@@ -1228,7 +1227,7 @@ export default function AdminPage() {
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <a
-                    href="https://drive.google.com/drive/folders/1GIADeliksariSemarangArchive"
+                    href={process.env.NEXT_PUBLIC_GOOGLE_DRIVE_GALLERY_URL || "https://drive.google.com/drive/folders/1T_ahqCtmOjdFl0L-MNu7bIQo-8Oz8y9h"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] hover:bg-[#EBDDCF] dark:hover:bg-[#331418] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold transition-all flex items-center gap-2"

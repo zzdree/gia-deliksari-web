@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 import { uploadToGoogleDrive } from '@/lib/googleDrive';
 import { GalleryItem } from '@/types';
 
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. If Supabase is configured, upload to Supabase Storage 'church-gallery' bucket for fast web CDN
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
       try {
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
           .from('church-gallery')
           .upload(`public/${fileName}`, buffer, {
             contentType: file.type || 'image/jpeg',
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
           });
 
         if (!uploadError && uploadData) {
-          const { data: publicUrlData } = supabase.storage
+          const { data: publicUrlData } = supabaseAdmin.storage
             .from('church-gallery')
             .getPublicUrl(`public/${fileName}`);
           imageUrl = publicUrlData.publicUrl;
@@ -100,9 +100,9 @@ export async function POST(req: NextRequest) {
     };
 
     // 5. If Supabase DB is active, insert row and auto-prune oldest items beyond MAX_ACTIVE_PHOTOS
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
       try {
-        await supabase.from('gallery_items').insert([{
+        await supabaseAdmin.from('gallery_items').insert([{
           title: newGalleryItem.title,
           category: newGalleryItem.category,
           image: newGalleryItem.image,
@@ -110,13 +110,13 @@ export async function POST(req: NextRequest) {
         }]);
 
         // Auto-Prune: Check total count in Supabase
-        const { count } = await supabase
+        const { count } = await supabaseAdmin
           .from('gallery_items')
           .select('*', { count: 'exact', head: true });
 
         if (count && count > MAX_ACTIVE_PHOTOS) {
           // Fetch oldest items exceeding limit
-          const { data: oldestItems } = await supabase
+          const { data: oldestItems } = await supabaseAdmin
             .from('gallery_items')
             .select('id, image')
             .order('created_at', { ascending: true })
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
 
           if (oldestItems && oldestItems.length > 0) {
             const idsToDelete = oldestItems.map(i => i.id);
-            await supabase.from('gallery_items').delete().in('id', idsToDelete);
+            await supabaseAdmin.from('gallery_items').delete().in('id', idsToDelete);
             console.log(`[Auto-Prune] Dihapus ${idsToDelete.length} foto lama dari cache Supabase agar kuota hemat.`);
           }
         }
