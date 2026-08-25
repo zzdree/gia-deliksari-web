@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { uploadToGoogleDrive } from '@/lib/googleDrive';
 import { GalleryItem } from '@/types';
 
 const MAX_ACTIVE_PHOTOS = 50; // Rolling buffer limit to keep CDN ultra-lean (<100MB)
@@ -17,10 +18,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File gambar wajib diunggah' }, { status: 400 });
     }
 
-    // Security Check 1: Max file size (5MB)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    // Security Check 1: Max file size (10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'Ukuran file melebihi batas maksimum 5MB' }, { status: 400 });
+      return NextResponse.json({ error: 'Ukuran file melebihi batas maksimum 10MB' }, { status: 400 });
     }
 
     // Security Check 2: MIME type whitelist
@@ -47,8 +48,21 @@ export async function POST(req: NextRequest) {
     const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
 
     let imageUrl = '';
+    let driveResult: any = null;
 
-    // 1. If Supabase is configured, upload to Supabase Storage 'church-gallery' bucket
+    // 1. Upload to Google Drive via Service Account (Master Permanent Archive)
+    try {
+      driveResult = await uploadToGoogleDrive({
+        fileName: `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`,
+        mimeType: file.type || 'image/jpeg',
+        buffer: buffer,
+        description: `Judul: ${title} | Kategori: ${category} | Diunggah oleh: ${uploaderName} | Tanggal: ${date}`,
+      });
+    } catch (gdriveErr) {
+      console.warn('Google Drive direct upload warning:', gdriveErr);
+    }
+
+    // 2. If Supabase is configured, upload to Supabase Storage 'church-gallery' bucket for fast web CDN
     if (isSupabaseConfigured && supabase) {
       try {
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -69,13 +83,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Fallback to optimized Base64 data URL if storage bucket is not ready
+    // 3. Fallback to optimized Base64 data URL if storage bucket is not ready
     if (!imageUrl) {
       const base64 = buffer.toString('base64');
       imageUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
     }
 
-    // 3. Create new Gallery Item
+    // 4. Create new Gallery Item
     const newGalleryItem: GalleryItem = {
       id: `gal-${Date.now()}`,
       title: title,
@@ -85,7 +99,7 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    // 4. If Supabase DB is active, insert row and auto-prune oldest items beyond MAX_ACTIVE_PHOTOS
+    // 5. If Supabase DB is active, insert row and auto-prune oldest items beyond MAX_ACTIVE_PHOTOS
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('gallery_items').insert([{
@@ -121,9 +135,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Foto dokumentasi berhasil diunggah ke Galeri Web & antrean arsip Google Drive',
+      message: 'Foto dokumentasi berhasil diunggah ke Galeri Web & tersimpan abadi di Google Drive',
       item: newGalleryItem,
-      driveStatus: 'queued_to_drive',
+      googleDrive: driveResult?.success ? {
+        synced: true,
+        fileId: driveResult.fileId,
+        link: driveResult.webViewLink,
+      } : {
+        synced: false,
+        error: driveResult?.error || driveResult?.reason || 'unconfigured',
+      },
     });
   } catch (error: any) {
     console.error('Gallery upload error:', error);
