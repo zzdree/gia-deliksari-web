@@ -26,7 +26,7 @@ export default function UploadPhotoModal({ isOpen, onClose, onUploadSuccess }: U
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<'ibadah' | 'worship' | 'youth' | 'komunitas'>('ibadah');
+  const [category, setCategory] = useState<'ibadah' | 'worship' | 'youth' | 'komunitas' | 'umum'>('umum');
   const [uploaderName, setUploaderName] = useState('');
   const [date, setDate] = useState('Agustus 2026');
   const [isUploading, setIsUploading] = useState(false);
@@ -231,6 +231,7 @@ export default function UploadPhotoModal({ isOpen, onClose, onUploadSuccess }: U
                   <option value="worship">Praise & Worship</option>
                   <option value="youth">Grow Youth</option>
                   <option value="komunitas">Komunitas / Komsel</option>
+                  <option value="umum">Lainnya / Umum</option>
                 </select>
               </div>
 

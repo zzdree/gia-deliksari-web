@@ -142,6 +142,11 @@ function toGalleryModel(db: any): GalleryItem {
     title: db.title,
     category: db.category || 'ibadah',
     image: db.image || db.imageUrl || '/images/gallery-1.jpg',
+    thumbUrl: db.thumb_url || db.thumbUrl || db.image || db.imageUrl || '/images/gallery-1.jpg',
+    driveFileId: db.drive_file_id || db.driveFileId,
+    driveWebViewLink: db.drive_web_view_link || db.driveWebViewLink,
+    uploaderName: db.uploader_name || db.uploaderName,
+    isPublished: db.is_published ?? db.isPublished ?? true,
     date: db.date,
     createdAt: db.created_at || db.createdAt,
   };
@@ -153,6 +158,11 @@ function toGalleryDB(model: GalleryItem) {
     title: model.title,
     category: model.category,
     image: model.image,
+    thumb_url: model.thumbUrl || model.image,
+    drive_file_id: model.driveFileId,
+    drive_web_view_link: model.driveWebViewLink,
+    uploader_name: model.uploaderName,
+    is_published: model.isPublished ?? true,
     date: model.date,
   };
 }
@@ -288,6 +298,30 @@ export const dataStore = {
 
   getGallery: (): Promise<GalleryItem[]> =>
     readViaApi<GalleryItem>('/api/public/data?table=gallery_items', GALLERY_KEY, toGalleryModel, INITIAL_GALLERY),
+
+  /**
+   * Galeri etalase mode: hanya N foto acak (default 12) dari cache Supabase.
+   * Digunakan oleh GallerySection untuk etalase agar LCP tetap ringan & tidak
+   * meledakkan storage Supabase. Server melakukan Fisher-Yates shuffle deterministik
+   * (seeded by day) sehingga 1x refresh halaman = etalase baru stabil sepanjang hari.
+   */
+  getRandomGallery: async (limit: number = 12): Promise<GalleryItem[]> => {
+    try {
+      const res = await fetch(
+        `/api/public/data?table=gallery_items&random=true&limit=${limit}`,
+        { cache: 'no-store' },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (Array.isArray(json.items)) {
+        return json.items.map(toGalleryModel);
+      }
+      return [];
+    } catch (err) {
+      console.warn('[dataStore] getRandomGallery failed, fallback to full getGallery:', err);
+      return dataStore.getGallery();
+    }
+  },
 
   /** Public form submission — validated & rate-limited server-side. */
   saveMinistryRequest: async (item: MinistryRequest): Promise<boolean> => {

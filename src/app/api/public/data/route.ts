@@ -56,12 +56,57 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Tabel tidak dikenal' }, { status: 400 });
   }
 
+  // Gallery-specific query params: ?random=true&limit=12
+  // - random=true: order by random() dan batasi N foto (default 12)
+  // - limit=N: batasi jumlah row yang dikembalikan (untuk random mode)
+  const random = req.nextUrl.searchParams.get('random') === 'true';
+  const limitParam = parseInt(req.nextUrl.searchParams.get('limit') || '12', 10);
+
   const db = client();
   if (!db) {
     return NextResponse.json({ items: [] });
   }
 
-  const { data, error } = await db.from(table).select('*').order(ORDER_COLUMNS[table], { ascending: ORDER_COLUMNS[table] !== 'created_at' });
+  // Bangun query — gallery mendukung random sampling untuk etalase,
+  // tabel lain menggunakan ORDER BY tradisional.
+  let query;
+  if (table === 'gallery_items' && random) {
+    // Pakai RPC-like via .select().order('random()').limit()
+    // Supabase JS tidak support ORDER BY RANDOM() langsung, jadi kita ambil
+    // semua yang published lalu shuffle+slice di-memory di sini. Aman karena
+    // MAX_ACTIVE_PHOTOS = 50 (rolling buffer) sehingga dataset selalu kecil.
+    const { data, error } = await db
+      .from(table)
+      .select('*')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error(`[public/data] ${table}:`, error.message);
+      return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 });
+    }
+    // Fisher-Yates shuffle deterministik by date seed supaya tidak berubah tiap detik
+    const shuffled = (data ?? []).slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      // pakai index seeded by date supaya refresh harian menghasilkan set berbeda
+      const seed = (i * 9301 + 49297 + new Date().getDate()) % 233280;
+      const j = seed % (i + 1);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const sliced = shuffled.slice(0, Math.min(limitParam, 12));
+    return NextResponse.json(
+      { items: sanitize(table, sliced) },
+      { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=900' } },
+    );
+  }
+
+  const orderCol = ORDER_COLUMNS[table];
+  const ascending = orderCol !== 'created_at';
+  query = db.from(table).select('*').order(orderCol, { ascending });
+  if (table === 'gallery_items') {
+    // untuk mode non-random, hanya tampilkan yang published
+    query = query.eq('is_published', true);
+  }
+  const { data, error } = await query;
   if (error) {
     console.error(`[public/data] ${table}:`, error.message);
     return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 });

@@ -158,7 +158,7 @@ export default function AdminPage() {
   const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState<{
     title: string;
-    category: 'ibadah' | 'worship' | 'youth' | 'komunitas';
+    category: 'ibadah' | 'worship' | 'youth' | 'komunitas' | 'umum';
     image: string;
     date: string;
   }>({
@@ -2064,6 +2064,7 @@ export default function AdminPage() {
                     <option value="worship">Worship</option>
                     <option value="youth">Youth</option>
                     <option value="komunitas">Komunitas</option>
+                    <option value="umum">Umum</option>
                   </select>
                 </div>
 

@@ -60,11 +60,18 @@ export interface Sermon {
   createdAt?: string;
 }
 
+export type GalleryCategory = 'ibadah' | 'worship' | 'youth' | 'komunitas' | 'umum';
+
 export interface GalleryItem {
   id: string;
   title: string;
-  category: 'ibadah' | 'worship' | 'youth' | 'komunitas';
-  image: string;
+  category: GalleryCategory;
+  image: string;            // URL utama (public Supabase Storage / public URL Drive)
+  thumbUrl?: string;        // NEW: URL thumbnail kompres (Supabase Image Transform)
+  driveFileId?: string;     // NEW: ID file di Google Drive (untuk sync & buka resolusi penuh)
+  driveWebViewLink?: string;// NEW: Link "Lihat Resolusi Penuh" di Google Drive jemaat
+  uploaderName?: string;    // NEW: Nama jemaat (kredit, mis. "Ibu Yuni")
+  isPublished?: boolean;    // NEW: Flag tampil di galeri publik (default true)
   date: string;
   createdAt?: string;
 }

@@ -16,7 +16,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
  * Fallback: service account (read-only capable; uploads will 403 unless the
  *   target is a Shared Drive). Kept so metadata checks still work if configured.
  */
-function getDriveClient() {
+export function getDriveClient() {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;

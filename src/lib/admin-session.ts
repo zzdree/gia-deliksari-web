@@ -53,4 +53,14 @@ export function hasValidAdminPin(pin: unknown) {
   return configuredPinBuffer.length === pinBuffer.length && timingSafeEqual(configuredPinBuffer, pinBuffer);
 }
 
+/**
+ * Helper for API routes: extract the admin session cookie from a NextRequest
+ * and return a normalized { isAdmin } shape. Use this in route handlers that
+ * need to gate by admin auth without re-implementing cookie parsing inline.
+ */
+export function readSessionFromCookie(req: { cookies: { get(name: string): { value: string } | undefined } }) {
+  const cookie = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  return { isAdmin: hasValidAdminSession(cookie) };
+}
+
 export const adminSessionMaxAge = SESSION_DURATION_SECONDS;
