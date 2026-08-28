@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     let thumbUrl = '';
     let driveResult: any = null;
 
-    // 1. Upload to Google Drive via OAuth (Master Permanent Archive di My Drive gereja)
+    // 1. Upload to Google Drive (Master Permanent Archive di My Drive gereja)
     try {
       driveResult = await uploadToGoogleDrive({
         fileName: `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`,
@@ -61,6 +61,26 @@ export async function POST(req: NextRequest) {
       });
     } catch (gdriveErr) {
       console.warn('Google Drive direct upload warning:', gdriveErr);
+    }
+
+    // 1b. Make uploaded file publicly readable via link (anyone with the link can view).
+    // Jemaat can download from the webViewLink returned by the upload, but cannot list
+    // or delete (service account is the only owner-role).
+    if (driveResult && driveResult.success && driveResult.fileId) {
+      try {
+        const { getDriveClient } = await import('@/lib/googleDrive');
+        const client = getDriveClient();
+        if (client) {
+          await client.drive.permissions.create({
+            fileId: driveResult.fileId,
+            requestBody: { role: 'reader', type: 'anyone' },
+            fields: 'id',
+            supportsAllDrives: true,
+          });
+        }
+      } catch (permErr) {
+        console.warn('Could not set public-read on uploaded Drive file:', permErr);
+      }
     }
 
     // 2. Upload ke Supabase Storage 'church-gallery' untuk CDN publik (thumbnail kompres otomatis)
