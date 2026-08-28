@@ -14,7 +14,7 @@ import path from 'node:path';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const TABLES = (process.env.BACKUP_TABLES || [
+const DEFAULT_TABLES = [
   'announcements',
   'gallery_items',
   'sermons',
@@ -25,7 +25,10 @@ const TABLES = (process.env.BACKUP_TABLES || [
   'small_groups',
   'small_group_members',
   'inventory',
-]).split(',').map(s => s.trim()).filter(Boolean);
+];
+const TABLES = process.env.BACKUP_TABLES
+  ? process.env.BACKUP_TABLES.split(',').map(s => s.trim()).filter(Boolean)
+  : DEFAULT_TABLES;
 
 const PAGE_SIZE = 1000;
 const OUT_DIR = path.resolve(process.cwd(), 'backups');
