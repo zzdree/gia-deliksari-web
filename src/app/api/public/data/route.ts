@@ -21,6 +21,11 @@ const ORDER_COLUMNS: Record<string, string> = {
   gallery_items: 'created_at',
 };
 
+// Regex yang lebih agresif untuk catch semua variant error PostgREST/Postgres
+// ketika kolom is_published belum ada di schema production (schema drift).
+const COLUMN_MISSING_RE =
+  /is_published|column|schema cache|does not exist|could not find|invalid column/i;
+
 function client() {
   // Prefer service-role on the server so reads keep working even if public
   // RLS is later tightened to SELECT-only-for-anon; fall back to anon client.
@@ -57,8 +62,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Gallery-specific query params: ?random=true&limit=12
-  // - random=true: order by random() dan batasi N foto (default 12)
-  // - limit=N: batasi jumlah row yang dikembalikan (untuk random mode)
+  // - random=true: shuffle & slice in-memory (dataset kecil, MAX_ACTIVE_PHOTOS=50)
+  // - limit=N: batasi jumlah row random (default 12)
   const random = req.nextUrl.searchParams.get('random') === 'true';
   const limitParam = parseInt(req.nextUrl.searchParams.get('limit') || '12', 10);
 
@@ -67,27 +72,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: [] });
   }
 
-  // Bangun query — gallery mendukung random sampling untuk etalase,
-  // tabel lain menggunakan ORDER BY tradisional.
-  let query;
+  // Gallery random mode
   if (table === 'gallery_items' && random) {
-    // Pakai RPC-like via .select().order('random()').limit()
-    // Supabase JS tidak support ORDER BY RANDOM() langsung, jadi kita ambil
-    // semua yang published lalu shuffle+slice di-memory di sini. Aman karena
-    // MAX_ACTIVE_PHOTOS = 50 (rolling buffer) sehingga dataset selalu kecil.
-    const { data, error } = await db
+    let result = await db
       .from(table)
       .select('*')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
+
+    // Fallback: kalau kolom is_published gak ada, retry tanpa filter
+    if (result.error && COLUMN_MISSING_RE.test(result.error.message)) {
+      console.warn(
+        `[public/data] ${table}: is_published missing, retrying without filter:`,
+        result.error.message,
+      );
+      result = await db
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: false });
+    }
+
+    const { data, error } = result;
     if (error) {
       console.error(`[public/data] ${table}:`, error.message);
-      return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Gagal memuat data', detail: error.message },
+        { status: 500 },
+      );
     }
-    // Fisher-Yates shuffle deterministik by date seed supaya tidak berubah tiap detik
+
+    // Fisher-Yates shuffle deterministik by date seed
     const shuffled = (data ?? []).slice();
     for (let i = shuffled.length - 1; i > 0; i--) {
-      // pakai index seeded by date supaya refresh harian menghasilkan set berbeda
       const seed = (i * 9301 + 49297 + new Date().getDate()) % 233280;
       const j = seed % (i + 1);
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -99,17 +115,35 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Tabel lain (atau gallery non-random)
   const orderCol = ORDER_COLUMNS[table];
   const ascending = orderCol !== 'created_at';
-  query = db.from(table).select('*').order(orderCol, { ascending });
+  let query = db.from(table).select('*').order(orderCol, { ascending });
   if (table === 'gallery_items') {
-    // untuk mode non-random, hanya tampilkan yang published
     query = query.eq('is_published', true);
   }
-  const { data, error } = await query;
+
+  let { data, error } = await query;
+  // Fallback untuk gallery non-random kalau kolom is_published missing
+  if (error && table === 'gallery_items' && COLUMN_MISSING_RE.test(error.message)) {
+    console.warn(
+      `[public/data] ${table}: is_published missing, retrying without filter:`,
+      error.message,
+    );
+    const retry = await db
+      .from(table)
+      .select('*')
+      .order(orderCol, { ascending });
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     console.error(`[public/data] ${table}:`, error.message);
-    return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Gagal memuat data', detail: error.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json(

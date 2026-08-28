@@ -130,64 +130,135 @@ export async function POST(req: NextRequest) {
     };
 
     // 5. Insert ke Supabase DB + Auto-Prune (rolling buffer MAX_ACTIVE_PHOTOS)
+    let dbSynced = false;
+    let dbError: string | null = null;
+    let insertedId: string | null = null;
     if (isSupabaseAdminConfigured && supabaseAdmin) {
       try {
         // Insert dengan kolom Drive integration lengkap
-        const { data: insertedRow, error: insertErr } = await supabaseAdmin.from('gallery_items').insert([{
-          title: newGalleryItem.title,
-          category: newGalleryItem.category,
-          image: newGalleryItem.image,
-          thumb_url: newGalleryItem.thumbUrl,
-          drive_file_id: newGalleryItem.driveFileId,
-          drive_web_view_link: newGalleryItem.driveWebViewLink,
-          uploader_name: newGalleryItem.uploaderName,
-          is_published: newGalleryItem.isPublished,
-          date: newGalleryItem.date,
-        }]).select('id').single();
+        const { data: insertedRow, error: insertErr } = await supabaseAdmin
+          .from('gallery_items')
+          .insert([
+            {
+              title: newGalleryItem.title,
+              category: newGalleryItem.category,
+              image: newGalleryItem.image,
+              thumb_url: newGalleryItem.thumbUrl,
+              drive_file_id: newGalleryItem.driveFileId,
+              drive_web_view_link: newGalleryItem.driveWebViewLink,
+              uploader_name: newGalleryItem.uploaderName,
+              is_published: newGalleryItem.isPublished,
+              date: newGalleryItem.date,
+            },
+          ])
+          .select('id')
+          .single();
+
+        if (insertErr) {
+          // Fallback: coba insert TANPA kolom Drive integration (untuk schema lama)
+          // yang mungkin belum punya thumb_url / drive_file_id / dll.
+          console.warn(
+            '[gallery/upload] Insert pertama gagal, retry tanpa kolom opsional:',
+            insertErr.message,
+          );
+          const { data: retryRow, error: retryErr } = await supabaseAdmin
+            .from('gallery_items')
+            .insert([
+              {
+                title: newGalleryItem.title,
+                category: newGalleryItem.category,
+                image: newGalleryItem.image,
+                is_published: true,
+                date: newGalleryItem.date,
+              },
+            ])
+            .select('id')
+            .single();
+
+          if (retryErr) {
+            dbError = retryErr.message;
+            console.error('[gallery/upload] Insert retry juga gagal:', retryErr.message);
+          } else {
+            dbSynced = true;
+            insertedId = retryRow?.id ?? null;
+            console.log(
+              '[gallery/upload] Berhasil insert via fallback (tanpa kolom opsional)',
+            );
+          }
+        } else {
+          dbSynced = true;
+          insertedId = insertedRow?.id ?? null;
+        }
 
         // Auto-Prune: jika melebihi MAX_ACTIVE_PHOTOS, hapus yang terlama dari SUPABASE CACHE saja.
         // File di Google Drive TIDAK dihapus — jemaat selalu bisa buka resolusi penuh via Drive.
-        const { count } = await supabaseAdmin
-          .from('gallery_items')
-          .select('*', { count: 'exact', head: true });
-
-        if (count && count > MAX_ACTIVE_PHOTOS) {
-          const { data: oldestItems } = await supabaseAdmin
+        if (dbSynced) {
+          const { count } = await supabaseAdmin
             .from('gallery_items')
-            .select('id, image, drive_file_id')
-            .order('created_at', { ascending: true })
-            .limit(count - MAX_ACTIVE_PHOTOS);
+            .select('*', { count: 'exact', head: true });
 
-          if (oldestItems && oldestItems.length > 0) {
-            const idsToDelete = oldestItems.map(i => i.id);
-            // Hapus row DB (file Supabase Storage ikut terhapus via policy).
-            // TAPI: hapus hanya jika TIDAK punya drive_file_id, agar arsip Drive tidak orphan.
-            // Untuk amannya, kita HANYA hapus cache Supabase; file di Drive dibiarkan utuh.
-            await supabaseAdmin.from('gallery_items').delete().in('id', idsToDelete);
-            console.log(`[Auto-Prune] ${idsToDelete.length} foto lama dihapus dari cache Supabase. Arsip Drive tetap aman.`);
+          if (count && count > MAX_ACTIVE_PHOTOS) {
+            const { data: oldestItems } = await supabaseAdmin
+              .from('gallery_items')
+              .select('id, image, drive_file_id')
+              .order('created_at', { ascending: true })
+              .limit(count - MAX_ACTIVE_PHOTOS);
+
+            if (oldestItems && oldestItems.length > 0) {
+              const idsToDelete = oldestItems.map((i) => i.id);
+              await supabaseAdmin
+                .from('gallery_items')
+                .delete()
+                .in('id', idsToDelete);
+              console.log(
+                `[Auto-Prune] ${idsToDelete.length} foto lama dihapus dari cache Supabase. Arsip Drive tetap aman.`,
+              );
+            }
           }
         }
-
-        if (insertErr) {
-          console.warn('Insert gallery row warning:', insertErr.message);
-        }
-      } catch (dbErr) {
-        console.warn('Database sync warning for gallery item:', dbErr);
+      } catch (dbErr: any) {
+        dbError = dbErr?.message ?? String(dbErr);
+        console.error('[gallery/upload] Database sync error:', dbErr);
       }
+    }
+
+    // Jika insert DB gagal sepenuhnya, kembalikan 500 agar client tahu row
+    // tidak tersimpan. Drive upload tetap sukses (file ada di arsip).
+    if (!dbSynced && dbError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Upload berhasil ke Google Drive, tetapi gagal menyimpan metadata ke database. Foto tetap aman di Drive, namun tidak muncul di galeri publik.',
+          googleDrive: driveResult?.success
+            ? {
+                synced: true,
+                fileId: driveResult.fileId,
+                link: driveResult.webViewLink,
+              }
+            : { synced: false },
+          dbSynced: false,
+          dbError,
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
       message: 'Foto dokumentasi berhasil diunggah ke Galeri Web & tersimpan abadi di Google Drive',
-      item: newGalleryItem,
-      googleDrive: driveResult?.success ? {
-        synced: true,
-        fileId: driveResult.fileId,
-        link: driveResult.webViewLink,
-      } : {
-        synced: false,
-        error: driveResult?.error || driveResult?.reason || 'unconfigured',
-      },
+      item: { ...newGalleryItem, id: insertedId ?? newGalleryItem.id },
+      googleDrive: driveResult?.success
+        ? {
+            synced: true,
+            fileId: driveResult.fileId,
+            link: driveResult.webViewLink,
+          }
+        : {
+            synced: false,
+            error: driveResult?.error || driveResult?.reason || 'unconfigured',
+          },
+      dbSynced,
     });
   } catch (error: any) {
     console.error('Gallery upload error:', error);
