@@ -5,11 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { 
-  Announcement, 
-  ServantRoster, 
-  InventoryItem, 
-  MinistryCategory, 
+import {
+  Announcement,
+  ServantRoster,
+  InventoryItem,
+  MinistryCategory,
   InventoryCategory,
   Sermon,
   GalleryItem,
@@ -25,7 +25,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  CheckCircle2,
   Pin,
   Calendar,
   Search,
@@ -58,22 +57,43 @@ import {
 } from 'lucide-react';
 import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
 import UploadPhotoModal from '@/components/UploadPhotoModal';
+import { useToast } from '@/components/admin/useToast';
+import { useAdminAuth } from '@/components/admin/useAdminAuth';
+import { useAdminData } from '@/components/admin/useAdminData';
 
 export default function AdminPage() {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [passwordInput, setPasswordInput] = useState<string>('');
-  const [authError, setAuthError] = useState<string | null>(null);
+  // Cross-tab infrastructure: auth, data, toast. See hooks/ for details.
+  const {
+    isAuthenticated,
+    passwordInput,
+    setPasswordInput,
+    authError,
+    handleLogin: handleLoginSubmit,
+    handleLogout,
+  } = useAdminAuth();
+
+  // Toast (placeholder — assigned after showToast is in scope below)
+  const { showToast, ToastView } = useToast();
 
   // Tab & Data State
   const [activeTab, setActiveTab] = useState<'announcements' | 'roster' | 'requests' | 'media' | 'inventory'>('announcements');
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [roster, setRoster] = useState<ServantRoster[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [sermons, setSermons] = useState<Sermon[]>([]);
-  const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [requests, setRequests] = useState<MinistryRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    loading,
+    loadAllData,
+    announcements,
+    setAnnouncements,
+    roster,
+    setRoster,
+    inventory,
+    setInventory,
+    sermons,
+    setSermons,
+    gallery,
+    setGallery,
+    requests,
+    setRequests,
+  } = useAdminData(isAuthenticated, showToast);
 
   // Announcement Form State
   const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
@@ -193,88 +213,9 @@ export default function AdminPage() {
     notes: '',
   });
 
-  // Notification Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  // Fetch data
-  const loadAllData = async () => {
-    setLoading(true);
-    try {
-      const [annData, rosData, invData, srmData, galData, reqData] = await Promise.all([
-        adminDataStore.getAnnouncements(),
-        adminDataStore.getRoster(),
-        adminDataStore.getInventory(),
-        adminDataStore.getSermons(),
-        adminDataStore.getGallery(),
-        adminDataStore.getMinistryRequests()
-      ]);
-      setAnnouncements(annData);
-      setRoster(rosData);
-      setInventory(invData);
-      setSermons(srmData);
-      setGallery(galData);
-      setRequests(reqData);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      showToast('Gagal memuat data dari database');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Check session cookie on mount
-  useEffect(() => {
-    fetch('/api/auth/check')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated) {
-          setIsAuthenticated(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadAllData();
-    }
-  }, [isAuthenticated]);
-
-  // Auth Handler
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: passwordInput }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsAuthenticated(true);
-        showToast('Login Berhasil! Selamat Datang Majelis GIA Deliksari');
-      } else {
-        setAuthError(data.error || 'Password salah. Silakan periksa kembali kata sandi pengurus.');
-      }
-    } catch (err) {
-      setAuthError('Terjadi kesalahan koneksi saat memverifikasi login.');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (e) {}
-    setIsAuthenticated(false);
-    setPasswordInput('');
-    showToast('Berhasil logout dari Portal Admin');
-  };
+  // Notification Toast — provided by useToast() hook above
+  const handleLogin = (e: React.FormEvent) =>
+    handleLoginSubmit(e, () => showToast('Login Berhasil! Selamat Datang Majelis GIA Deliksari'));
 
   // Announcement Handlers
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
@@ -644,13 +585,8 @@ export default function AdminPage() {
     <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
       <Navbar />
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#150B0D] text-white border border-[#3A1C20] shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-bold animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Toast Notification (rendered by useToast hook) */}
+      {ToastView}
 
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
         
