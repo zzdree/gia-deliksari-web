@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
     return NextResponse.json(
       { error: 'Supabase admin belum dikonfigurasi. Sinkronisasi tidak bisa berjalan.' },
       { status: 503 },

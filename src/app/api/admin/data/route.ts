@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, hasValidAdminSession } from '@/lib/admin-session';
-import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 
 /**
  * Server-side mutation gateway for the admin portal.
@@ -28,25 +28,48 @@ function isValidTable(value: unknown): value is TableName {
   return typeof value === 'string' && (TABLE_WHITELIST as readonly string[]).includes(value);
 }
 
+function getClientOrError(): { client: ReturnType<typeof getSupabaseAdmin>; error?: NextResponse } {
+  if (!isSupabaseAdminConfigured()) {
+    return {
+      client: null,
+      error: NextResponse.json(
+        {
+          error:
+            'Supabase service role not configured di server. ' +
+            'Pastikan NEXT_PUBLIC_SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah di-set di Vercel env (Production).',
+        },
+        { status: 503 },
+      ),
+    };
+  }
+  const client = getSupabaseAdmin();
+  if (!client) {
+    return {
+      client: null,
+      error: NextResponse.json({ error: 'Supabase admin client gagal diinisialisasi' }, { status: 503 }),
+    };
+  }
+  return { client };
+}
+
 export async function GET(req: NextRequest) {
   const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!hasValidAdminSession(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
-    return NextResponse.json({ error: 'Supabase service role not configured' }, { status: 503 });
-  }
+  const { client, error } = getClientOrError();
+  if (error || !client) return error!;
 
   const table = req.nextUrl.searchParams.get('table');
   if (!isValidTable(table)) {
     return NextResponse.json({ error: 'Tabel tidak dikenal' }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin.from(table).select('*');
-  if (error) {
-    console.error(`[admin/data] GET ${table} failed:`, error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error: dbError } = await client.from(table).select('*');
+  if (dbError) {
+    console.error(`[admin/data] GET ${table} failed:`, dbError.message, dbError);
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
   return NextResponse.json({ table, items: data ?? [] });
@@ -58,9 +81,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
-    return NextResponse.json({ error: 'Supabase service role not configured' }, { status: 503 });
-  }
+  const { client, error } = getClientOrError();
+  if (error || !client) return error!;
 
   let body: { table?: unknown; items?: unknown };
   try {
@@ -79,15 +101,14 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  // Basic row sanity: every item must be a plain object
   if (items.some((it) => typeof it !== 'object' || it === null || Array.isArray(it))) {
     return NextResponse.json({ error: 'Setiap item harus objek' }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin.from(table).upsert(items);
-  if (error) {
-    console.error(`[admin/data] POST ${table} failed:`, error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error: dbError } = await client.from(table).upsert(items);
+  if (dbError) {
+    console.error(`[admin/data] POST ${table} failed:`, dbError.message, dbError);
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, table, count: items.length });
@@ -99,9 +120,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
-    return NextResponse.json({ error: 'Supabase service role not configured' }, { status: 503 });
-  }
+  const { client, error } = getClientOrError();
+  if (error || !client) return error!;
 
   const table = req.nextUrl.searchParams.get('table');
   const id = req.nextUrl.searchParams.get('id');
@@ -113,10 +133,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'ID wajib diisi' }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin.from(table).delete().eq('id', id);
-  if (error) {
-    console.error(`[admin/data] DELETE ${table} failed:`, error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error: dbError } = await client.from(table).delete().eq('id', id);
+  if (dbError) {
+    console.error(`[admin/data] DELETE ${table} failed:`, dbError.message, dbError);
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, table, id });

@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Upload ke Supabase Storage 'church-gallery' untuk CDN publik (thumbnail kompres otomatis)
-    if (isSupabaseAdminConfigured && supabaseAdmin) {
+    if (isSupabaseAdminConfigured() && supabaseAdmin) {
       try {
         const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
           .from('church-gallery')
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     let dbSynced = false;
     let dbError: string | null = null;
     let insertedId: string | null = null;
-    if (isSupabaseAdminConfigured && supabaseAdmin) {
+    if (isSupabaseAdminConfigured() && supabaseAdmin) {
       try {
         // Insert dengan kolom Drive integration lengkap
         const { data: insertedRow, error: insertErr } = await supabaseAdmin

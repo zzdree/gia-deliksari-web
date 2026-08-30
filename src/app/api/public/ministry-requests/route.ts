@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Nomor WhatsApp wajib diisi' }, { status: 400 });
   }
 
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
     // Still acknowledge locally-queued items gracefully
     console.warn('[public/ministry-requests] Supabase not configured; request dropped');
     return NextResponse.json({ success: true, persisted: false });

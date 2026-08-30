@@ -29,7 +29,7 @@ const COLUMN_MISSING_RE =
 function client() {
   // Prefer service-role on the server so reads keep working even if public
   // RLS is later tightened to SELECT-only-for-anon; fall back to anon client.
-  if (isSupabaseAdminConfigured && supabaseAdmin) return supabaseAdmin;
+  if (isSupabaseAdminConfigured() && supabaseAdmin) return supabaseAdmin;
   if (isSupabaseConfigured && supabase) return supabase;
   return null;
 }
