@@ -69,7 +69,7 @@ export default function Hero() {
               <span>Ibadah Raya Berikutnya (Minggu 09.00 WIB):</span>
             </span>
             <span className="font-mono font-extrabold text-[#1F1617] dark:text-white bg-[#FDF0F0] dark:bg-[#331418] px-2.5 py-0.5 rounded-lg border border-[#F5CDD0] dark:border-[#521E25]">
-              {timeLeft.days}h {timeLeft.hours}j {timeLeft.minutes}m {timeLeft.seconds}d
+              {timeLeft.days}d {timeLeft.hours}j {timeLeft.minutes}m {timeLeft.seconds}d
             </span>
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function Hero() {
                     <span>Ibadah Onsite & Persekutuan</span>
                   </div>
                   <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug">
-                    Jl. Kolonel Hadijanto, Deliksari, Gunungpati, Semarang
+                    Jl. Kolonel HR Hadijanto, Sekaran, Kec. Gn. Pati, Kota Semarang, Jawa Tengah 50229
                   </h3>
                 </div>
               </div>

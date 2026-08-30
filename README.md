@@ -28,7 +28,7 @@ Website telah resmi aktif dan ter-deploy secara langsung di **Vercel Production*
 | Gerbang Akses | Tautan Halaman Langsung (Live URL) | Path Lokal | Deskripsi & Autentikasi |
 |---|---|---|---|
 | 🕊️ **Public Landing Page** | [**gia-deliksari-web.vercel.app**](https://gia-deliksari-web.vercel.app) | [`/public`](/public) / [`/`](/) | Akses publik jemaat & pengunjung: profil gereja, visi gembala, warta jemaat, 4 pilar ibadah, galeri foto asli, jadwal, dan kontak. |
-| 🛡️ **Admin Management Portal** | [**gia-deliksari-web.vercel.app/admin**](https://gia-deliksari-web.vercel.app/admin) | [`/admin`](/admin) | Akses internal pengurus gereja untuk input warta, plotting jadwal pelayan ibadah, dan checklist inventaris. **Default Password:** `9900` |
+| 🛡️ **Admin Management Portal** | [**gia-deliksari-web.vercel.app/admin**](https://gia-deliksari-web.vercel.app/admin) | [`/admin`](/admin) | Akses internal pengurus gereja untuk input warta, plotting jadwal pelayan ibadah, dan checklist inventaris. **Default Password:** `1515` (lihat INFO.md §10) |
 
 ---
 
@@ -52,7 +52,7 @@ Website telah resmi aktif dan ter-deploy secara langsung di **Vercel Production*
 - **Dark Mode & Light Mode**: Dukungan pergantian tema dinamis (*persisted*).
 
 ### 2. Admin Operational Portal (`/admin`)
-- 🔒 **Security Gate**: Terproteksi password session-based (`9900`).
+- 🔒 **Security Gate**: Terproteksi password session-based (`1515`).
 - 📢 **Manajemen Warta & Pengumuman**: Tambah, edit, hapus, pin warta prioritas, dan filter status publikasi.
 - 👥 **Plotting Jadwal Pelayan Ibadah**: Tab khusus untuk 4 kategori (General, Youth, Kidz, Hana) dengan input peran (WL, Singer, Pemusik, Multimedia, Usher, dll), nomor telepon, dan status konfirmasi.
 - 📦 **Checklist & Audit Inventaris**: Daftar inventaris alat gereja (Sound System, Multimedia, Musik, Kursi & Gedung) dengan fitur centang/uncentang realtime, filter status kondisi (*Good / Maintenance / Broken*), dan reset checklist sebelum ibadah.
@@ -160,7 +160,7 @@ Buat file `.env.local` di root proyek:
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 SUPABASE_ACCESS_TOKEN=<your-access-token>
-NEXT_PUBLIC_ADMIN_PASSWORD=9900
+NEXT_PUBLIC_ADMIN_PASSWORD=1515
 ```
 
 ### 4. Jalankan Development Server

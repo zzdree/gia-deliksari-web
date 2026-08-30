@@ -22,7 +22,7 @@ GIA Deliksari Web Portal adalah platform pelayanan digital terintegrasi untuk je
 ### 2.1 Route Map
 - `/` & `/home` — Beranda publik jemaat (13 section visual).
 - `/public` — *Deprecated*, diarahkan via HTTP 308 Permanent Redirect ke `/home`.
-- `/admin` — Portal Pengurus/Majelis Gereja (dilindungi kata sandi master `'9900'`).
+- `/admin` — Portal Pengurus/Majelis Gereja (dilindungi kata sandi master `'1515'`; lihat INFO.md §10).
 - `/api/youtube/latest` — API Route untuk fetch & cache video khotbah terbaru YouTube Data API v3.
 - `/api/gallery/upload` — API Route untuk upload foto dokumentasi, sinkronisasi Google Drive & rolling cache Supabase Storage.
 - `/manifest.webmanifest` — PWA Web App Manifest.
@@ -170,7 +170,7 @@ Setelah 4 langkah ini, jemaat bisa langsung upload via web.
 # === Supabase ===
 NEXT_PUBLIC_SUPABASE_URL=https://azgyihsukmatsggppxuz.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...              # ← BARU (untuk admin write)
+SUPABASE_SERVICE_ROLE_KEY=eyJ...              # ← BARU (untuk admin write) — sama dengan SUPABASE_SERVICE_KEY di .env.local
 SUPABASE_ACCESS_TOKEN=sbp_...                 # Management API only (jangan pakai runtime)
 
 # === Google Drive (OAuth - BARU) ===
@@ -193,7 +193,7 @@ YOUTUBE_API_KEY=AIzaSy...
 YOUTUBE_CHANNEL_ID=UCDh3ojx9ne3HOPoBuuoKlrg
 
 # === Admin ===
-NEXT_PUBLIC_ADMIN_PASSWORD=9900
+NEXT_PUBLIC_ADMIN_PASSWORD=1515
 ADMIN_SESSION_SECRET=random-32-char-string-here  # ← BARU
 ```
 

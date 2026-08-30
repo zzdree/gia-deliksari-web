@@ -45,8 +45,17 @@ export function hasValidAdminSession(session: string | undefined) {
 }
 
 export function hasValidAdminPin(pin: unknown) {
-  const configuredPin = process.env.ADMIN_PASSWORD || '9900';
+  // Default PIN adalah '1515' (lihat INFO.md §10.1). Wajib override via
+  // ADMIN_PASSWORD env var di production — lihat throw di production.
+  const configuredPin = process.env.ADMIN_PASSWORD || '1515';
   if (!configuredPin || typeof pin !== 'string') return false;
+
+  if (process.env.NODE_ENV === 'production' && configuredPin === '1515') {
+    console.error(
+      '[admin-session] BAHAYA: ADMIN_PASSWORD masih default "1515" di production. ' +
+      'Set environment variable ADMIN_PASSWORD sebelum deploy.',
+    );
+  }
 
   const configuredPinBuffer = Buffer.from(configuredPin);
   const pinBuffer = Buffer.from(pin);
