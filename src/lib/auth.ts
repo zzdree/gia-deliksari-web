@@ -208,7 +208,7 @@ async function fetchUserByCredential(username: string, plainPassword: string): P
   }
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, username, password_hash, roles, role, display_name, active, last_login_at, created_at')
+    .select('id, username, password_hash, roles, display_name, active, last_login_at, created_at')
     .eq('username', username)
     .eq('active', true)
     .maybeSingle();
