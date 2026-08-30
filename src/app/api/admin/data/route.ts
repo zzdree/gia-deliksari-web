@@ -92,3 +92,32 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, table, count: items.length });
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (!hasValidAdminSession(session)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!isSupabaseAdminConfigured || !supabaseAdmin) {
+    return NextResponse.json({ error: 'Supabase service role not configured' }, { status: 503 });
+  }
+
+  const table = req.nextUrl.searchParams.get('table');
+  const id = req.nextUrl.searchParams.get('id');
+
+  if (!isValidTable(table)) {
+    return NextResponse.json({ error: 'Tabel tidak dikenal' }, { status: 400 });
+  }
+  if (!id) {
+    return NextResponse.json({ error: 'ID wajib diisi' }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.from(table).delete().eq('id', id);
+  if (error) {
+    console.error(`[admin/data] DELETE ${table} failed:`, error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, table, id });
+}

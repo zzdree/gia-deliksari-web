@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Flame, 
-  Baby, 
-  HeartHandshake, 
-  Sparkles, 
-  Music, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Flame,
+  Baby,
+  HeartHandshake,
+  Sparkles,
+  Music,
   Car,
   ChevronRight,
   ShieldCheck
@@ -18,6 +18,27 @@ import {
 import { dataStore } from '@/lib/storage';
 import { INITIAL_ROSTER } from '@/lib/seedData';
 import { ServantRoster } from '@/types';
+
+interface PrimaryService {
+  id: string;
+  name: string;
+  day: string;
+  time: string;
+  location: string;
+  description: string;
+  category: string;
+  icon: string;
+}
+
+interface WeeklyActivity {
+  id: string;
+  name: string;
+  day: string;
+  time: string;
+  location: string;
+  description: string;
+  category: string;
+}
 
 export default function ScheduleSection() {
   const [roster, setRoster] = useState<ServantRoster[]>(INITIAL_ROSTER);
@@ -37,68 +58,123 @@ export default function ScheduleSection() {
     loadRoster();
   }, []);
 
-  const primaryServices = [
+  const primaryServices: PrimaryService[] = [
     {
-      name: 'Ibadah Raya Umum',
-      day: 'Setiap Hari Minggu',
-      time: '09.00 - 11.00 WIB',
-      category: 'Ibadah Utama',
-      desc: 'Pujian penyembahan bersama DS Worship, firman penggembalaan Ps. Yohanes Sutono, dan perjamuan kudus.',
-      badgeColor: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',
-      accentColor: 'border-l-4 border-l-[#C5222E]',
+      id: 'ibadah-raya',
+      name: 'Ibadah Raya Minggu',
+      day: 'Minggu',
+      time: '09:00 - 11:00',
+      location: 'Gedung Utama',
+      description: 'Ibadah raya mingguan untuk seluruh jemaat dengan pertemuan firman Tuhan dan doa bersama.',
+      category: 'ibadah-raya',
+      icon: '🕊️',
     },
     {
-      name: 'Grow Generation Youth',
-      day: 'Setiap Hari Sabtu',
-      time: '18.00 - 20.00 WIB',
-      category: 'Pemuda & Remaja (PRBK)',
-      desc: 'Fellowship pemuda & remaja bersama Kak Noel Yosan, S.Th. dengan praise & worship interaktif.',
-      badgeColor: 'bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72] dark:border-[#57241A]',
-      accentColor: 'border-l-4 border-l-[#C83E20]',
+      id: 'grow-generation',
+      name: 'Grow Generation (Youth & Komsel)',
+      day: 'Sabtu',
+      time: '18:00 - 20:00',
+      location: 'Gedung Utama / Ruang Bethel',
+      description: 'Pelayanan remaja & pemuda (SMA - Muda) dengan ibadah, pertemuan sel, dan fellowship. Pola selang-seling 4 minggu.',
+      category: 'pemuda',
+      icon: '🔥',
     },
     {
+      id: 'coc-kidz',
       name: 'COC Kidz (Sekolah Minggu)',
-      day: 'Setiap Hari Minggu',
-      time: '09.30 - 10.30 WIB',
-      category: 'Anak-Anak & Balita',
-      desc: 'Ibadah anak dengan cerita Alkitab interaktif, aktivitas kreatif, dan puji-pujian penuh sukacita.',
-      badgeColor: 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]',
-      accentColor: 'border-l-4 border-l-[#C59B27]',
+      day: 'Minggu',
+      time: '09:30 - 10:30',
+      location: 'Ruang Bethel',
+      description: 'Pelayanan anak-anak (Balita - SD) dengan pembelajaran Alkitab, pujian, dan kegiatan kreatif sesuai usia.',
+      category: 'anak',
+      icon: '🌈',
     },
     {
-      name: 'Persekutuan Hana & Komsel',
-      day: 'Minggu Bergantian (4 Minggu)',
-      time: '18.00 / 18.30 WIB',
-      category: 'Wanita & Kelompok Sel',
-      desc: 'Minggu 1 & 3: Persekutuan Wanita Hana (18.00 WIB). Minggu 2 & 4: Komsel Ekklesia di rumah jemaat (18.30 WIB).',
-      badgeColor: 'bg-[#FDF0F4] text-[#A6264A] border-[#F7C6D5] dark:bg-[#33121E] dark:text-[#EA7FA0] dark:border-[#541D30]',
-      accentColor: 'border-l-4 border-l-[#A6264A]',
+      id: 'hana-ekklesia',
+      name: 'Wanita HANA & Komsel Ekklesia',
+      day: 'Jumat (HANA) / Selasa (Komsel)',
+      time: '17:30 - 19:00 (HANA) / 18:30 - 20:00 (Komsel)',
+      location: 'Gedung Utama',
+      description: 'Ibadah HANA setiap Jumat 17.30 WIB. Komsel Ekklesia Sel setiap Selasa 18.30 WIB. Pola selang-seling 4-minggu pada ibadah HANA.',
+      category: 'wanita',
+      icon: '🌸',
+    },
+    {
+      id: 'ibadah-doa-pagi-card',
+      name: 'Ibadah Doa Pagi (Selasa–Jumat)',
+      day: 'Selasa – Jumat',
+      time: '05.00 - 05:30 WIB',
+      location: 'Gedung Utama + Zoom',
+      description: 'Doa pagi harian. Onsite di Gedung Utama & online via Zoom. Lihat INFO.md untuk link Zoom.',
+      category: 'doa-pagi',
+      icon: '🕯️',
     },
   ];
 
-  const weeklyActivities = [
+  const weeklyActivities: WeeklyActivity[] = [
     {
-      title: 'Kunjungan Penggembalaan Jemaat',
-      day: 'Setiap Hari Selasa',
-      time: 'Waktu Fleksibel (Sesuai Janji)',
-      desc: 'Pelayanan pastoral door-to-door, doa berkat rumah tangga, dan konseling bersama Ps. Yohanes Sutono.',
-      icon: Car,
-      color: 'bg-[#FDF0F0] text-[#C5222E] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C]',
+      id: 'ibadah-doa-pagi',
+      name: 'Ibadah Doa Pagi',
+      day: 'Selasa - Jumat',
+      time: '05:00 - 05:30',
+      location: 'Gedung Utama + Zoom',
+      description: 'Doa pagi bersama secara harian sebelum memulai aktivitas. Tersedia juga via Zoom untuk jemaat yang tidak bisa hadir fisik.',
+      category: 'doa',
     },
     {
-      title: 'Latihan Musik & Pelayan Altar',
-      day: 'Setiap Hari Sabtu',
-      time: 'Waktu Fleksibel (Sore / Menjelang Youth)',
-      desc: 'Persiapan rohani dan teknis para musisi, singer, worship leader, dan tim multimedia untuk ibadah raya.',
-      icon: Music,
-      color: 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E]',
+      id: 'latihan-musik',
+      name: 'Latihan Musik / Pujian',
+      day: 'Sabtu',
+      time: '10:00 - 12:00 & 20:00 - 22:00 (fleksibel)',
+      location: 'Gedung Utama',
+      description: 'Latihan tim pujian & musik untuk persiapan ibadah Minggu dan acara khusus. Jadwal fleksibel sesuai kebutuhan.',
+      category: 'musik',
+    },
+    {
+      id: 'visitasi-jemaat',
+      name: 'Visitasi Jemaat',
+      day: 'Selasa',
+      time: 'Fleksibel',
+      location: 'Area Jemaat',
+      description: 'Kunjungan pastoral ke rumah jemaat untuk doa, konseling, dan persekutuan.',
+      category: 'pastoral',
+    },
+    {
+      id: 'kegiatan-kantor',
+      name: 'Kegiatan Kantor Gereja',
+      day: 'Selasa - Sabtu',
+      time: '08:00 - 15:00',
+      location: 'Ruang Gembala / Kantor',
+      description: 'Jam operasional kantor gereja untuk administrasi, konseling, dan pertemuan pastoral.',
+      category: 'administrasi',
     },
   ];
+
+  // Helper untuk icon dan warna kategori
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'doa': return <Flame className="w-6 h-6" />;
+      case 'musik': return <Music className="w-6 h-6" />;
+      case 'pastoral': return <Car className="w-6 h-6" />;
+      case 'administrasi': return <ShieldCheck className="w-6 h-6" />;
+      default: return <Users className="w-6 h-6" />;
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'doa': return 'bg-[#FDF0F0] text-[#C5222E] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C]';
+      case 'musik': return 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E]';
+      case 'pastoral': return 'bg-[#FDF5F0] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72]';
+      case 'administrasi': return 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0] dark:bg-[#142A1B] dark:text-[#4ADE80]';
+      default: return 'bg-[#F7F2E8] text-[#5A4D4E] border-[#EBDDCF] dark:bg-[#2A161A] dark:text-[#D5C2C4]';
+    }
+  };
 
   return (
     <section id="jadwal" className="py-24 bg-[#F7F2E8]/60 dark:bg-[#1A0E10]/60 border-y border-[#EBDDCF] dark:border-[#3A1C20] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
@@ -117,12 +193,12 @@ export default function ScheduleSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           {primaryServices.map((service) => (
             <div
-              key={service.name}
-              className={`p-7 sm:p-8 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 ${service.accentColor}`}
+              key={service.id}
+              className="p-7 sm:p-8 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6"
             >
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className={`px-3 py-1 rounded-xl text-xs font-bold border ${service.badgeColor}`}>
+                  <span className="px-3 py-1 rounded-xl text-xs font-bold border bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border-[#F5CDD0] dark:border-[#521E25]">
                     {service.category}
                   </span>
                   <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C5222E] dark:text-[#E03643]">
@@ -141,14 +217,14 @@ export default function ScheduleSection() {
                 </div>
 
                 <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
-                  {service.desc}
+                  {service.description}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-[#6E5D5F] dark:text-[#B5A1A3]">
                   <MapPin className="w-3.5 h-3.5 text-[#C5222E]" />
-                  <span>Sanctuary GIA Deliksari</span>
+                  <span>{service.location}</span>
                 </div>
                 <a
                   href="#layanan"
@@ -162,35 +238,32 @@ export default function ScheduleSection() {
           ))}
         </div>
 
-        {/* Weekly Activities (Pastoral Visit & Music Rehearsal) */}
+        {/* Weekly Activities */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-          {weeklyActivities.map((act) => {
-            const Icon = act.icon;
-            return (
-              <div
-                key={act.title}
-                className="p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex items-start gap-5"
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${act.color}`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-[#C5222E] dark:text-[#E03643] bg-[#FDF0F0] dark:bg-[#331418] px-2.5 py-0.5 rounded-lg border border-[#F5CDD0] dark:border-[#521E25]">
-                      {act.day}
-                    </span>
-                    <span className="text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">{act.time}</span>
-                  </div>
-                  <h4 className="text-lg font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                    {act.title}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
-                    {act.desc}
-                  </p>
-                </div>
+          {weeklyActivities.map((act) => (
+            <div
+              key={act.id}
+              className="p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex items-start gap-5"
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${getCategoryColor(act.category)}`}>
+                {getCategoryIcon(act.category)}
               </div>
-            );
-          })}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold text-[#C5222E] dark:text-[#E03643] bg-[#FDF0F0] dark:bg-[#331418] px-2.5 py-0.5 rounded-lg border border-[#F5CDD0] dark:border-[#521E25]">
+                    {act.day}
+                  </span>
+                  <span className="text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">{act.time}</span>
+                </div>
+                <h4 className="text-lg font-bold text-[#1F1617] dark:text-[#F5EFEB]">
+                  {act.name}
+                </h4>
+                <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
+                  {act.description}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Servant Roster Table */}

@@ -1,21 +1,57 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  Pin, 
-  Calendar, 
-  Tag, 
-  Printer, 
-  Sparkles, 
-  ChevronRight, 
-  X, 
+import {
+  Bell,
+  Pin,
+  Calendar,
+  Tag,
+  Printer,
+  Sparkles,
+  ChevronRight,
+  X,
   BookOpen,
-  Filter
+  Filter,
+  Hourglass,
+  CheckCircle2
 } from 'lucide-react';
 import { dataStore } from '@/lib/storage';
 import { INITIAL_ANNOUNCEMENTS } from '@/lib/seedData';
 import { Announcement, MinistryCategory } from '@/types';
+import { CountdownTimer } from './CountdownTimer';
+
+/**
+ * MiniCountdown: countdown sederhana per warta (hari, jam, menit).
+ * - Jika targetDate <= sekarang → tampil "Sudah Berlalu".
+ * - Update setiap 60 detik (cukup untuk akurasi hari).
+ */
+function MiniCountdown({ targetDate }: { targetDate: string }) {
+  const compute = () => {
+    const target = new Date(`${targetDate}T00:00:00`).getTime();
+    const now = Date.now();
+    const diff = target - now;
+    if (diff <= 0) return null;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    return { days, hours, minutes };
+  };
+  const [cd, setCd] = useState(compute);
+  useEffect(() => {
+    setCd(compute());
+    const id = setInterval(() => setCd(compute()), 60_000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetDate]);
+  if (!cd) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#FEF9EC] dark:bg-[#332612] text-[#B87A14] dark:text-[#F0BE5E] text-[11px] font-bold border border-[#F8E3B5] dark:border-[#543E19]">
+      <Hourglass className="w-3 h-3" />
+      {cd.days > 0 ? `${cd.days} hari ` : ''}
+      {cd.hours}j {cd.minutes}m lagi
+    </span>
+  );
+}
 
 export default function AnnouncementBoard() {
   const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
@@ -67,21 +103,24 @@ export default function AnnouncementBoard() {
     }
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const filteredAnnouncements = announcements
     .filter((item) => {
       // Hanya tampilkan pengumuman yang dipublikasikan
       if (item.isPublished === false) return false;
 
       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      
-      const now = new Date();
+
       const eventDate = new Date(item.eventDate);
-      
+      eventDate.setHours(0, 0, 0, 0);
+
       let matchesTime = true;
       if (timeFilter === 'upcoming') {
-        matchesTime = eventDate >= new Date(now.setHours(0, 0, 0, 0));
+        matchesTime = eventDate >= today;
       } else if (timeFilter === 'past') {
-        matchesTime = eventDate < new Date(now.setHours(0, 0, 0, 0));
+        matchesTime = eventDate < today;
       }
 
       return matchesCategory && matchesTime;
@@ -90,6 +129,10 @@ export default function AnnouncementBoard() {
       // Sematkan yang di-pin di bagian atas
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
+      // Upcoming: tanggal terdekat di atas; past: terbaru di atas
+      if (timeFilter === 'past') {
+        return new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime();
+      }
       return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
     });
 
@@ -123,6 +166,11 @@ export default function AnnouncementBoard() {
           </div>
         </div>
 
+        {/* Next Service Countdown */}
+        <div className="mb-8">
+          <CountdownTimer service="auto" showFullDetails={true} />
+        </div>
+
         {/* Category & Time Filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-[#EBDDCF] dark:border-[#3A1C20]">
           
@@ -153,13 +201,14 @@ export default function AnnouncementBoard() {
           <div className="flex items-center gap-1 bg-[#F7F2E8] dark:bg-[#221215] p-1 rounded-xl border border-[#EBDDCF] dark:border-[#3A1C20]">
             <button
               onClick={() => setTimeFilter('upcoming')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 timeFilter === 'upcoming'
                   ? 'bg-white dark:bg-[#2A161A] text-[#1F1617] dark:text-white shadow-xs'
                   : 'text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#1F1617]'
               }`}
             >
-              Akan Datang
+              <Hourglass className="w-3.5 h-3.5" />
+              <span>Akan Datang</span>
             </button>
             <button
               onClick={() => setTimeFilter('all')}
@@ -173,79 +222,191 @@ export default function AnnouncementBoard() {
             </button>
             <button
               onClick={() => setTimeFilter('past')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 timeFilter === 'past'
                   ? 'bg-white dark:bg-[#2A161A] text-[#1F1617] dark:text-white shadow-xs'
                   : 'text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#1F1617]'
               }`}
             >
-              Terdahulu
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Sudah Berlalu</span>
             </button>
           </div>
 
         </div>
 
-        {/* Announcements Grid */}
+        {/* Empty state (depends on filter) */}
         {filteredAnnouncements.length === 0 ? (
           <div className="p-12 text-center rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] space-y-3">
             <Bell className="w-8 h-8 text-[#C5222E] mx-auto opacity-40" />
             <p className="text-base font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-              Belum ada warta untuk filter ini.
+              {timeFilter === 'past'
+                ? 'Belum ada warta yang sudah berlalu.'
+                : 'Belum ada warta untuk filter ini.'}
             </p>
             <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
-              Silakan pilih kategori lain atau tampilkan semua warta jemaat.
+              {timeFilter === 'upcoming' && (
+                <>Warta yang sudah lewat otomatis dipindahkan ke tab <b>Sudah Berlalu</b>.</>
+              )}
+              {timeFilter === 'past' && (
+                <>Warta lampau tetap tersimpan di arsip admin.</>
+              )}
+              {timeFilter === 'all' && (
+                <>Silakan pilih kategori lain untuk melihat warta jemaat.</>
+              )}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAnnouncements.map((item) => {
-              const badgeInfo = getCategoryBadge(item.category);
-              return (
-                <div
-                  key={item.id}
-                  className={`p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 ${
-                    item.isPinned ? 'ring-2 ring-[#C5222E]/40' : ''
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeInfo.color}`}>
-                        {badgeInfo.label}
-                      </span>
-                      {item.isPinned && (
-                        <span className="flex items-center gap-1 text-[11px] font-bold text-[#C5222E] dark:text-[#E03643]">
-                          <Pin className="w-3.5 h-3.5 fill-[#C5222E] dark:fill-[#E03643]" />
-                          <span>Penting</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="font-extrabold text-lg text-[#1F1617] dark:text-[#F5EFEB] leading-snug">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed line-clamp-4">
-                      {item.content}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex items-center justify-between text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-[#C5222E]" />
-                      <span>{item.eventDate}</span>
-                    </div>
-
-                    <a
-                      href="#layanan"
-                      className="font-bold text-[#C5222E] dark:text-[#E03643] hover:underline flex items-center gap-0.5"
-                    >
-                      <span>Layanan</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </div>
+          /* Two-section layout: "Akan Datang" pinned di atas, "Sudah Berlalu" di bawah (collapsed) */
+          <div className="space-y-8">
+            {timeFilter === 'all' || timeFilter === 'upcoming' ? (() => {
+              const upcoming = filteredAnnouncements.filter(
+                (item) => new Date(item.eventDate) >= today,
               );
-            })}
+              const past = filteredAnnouncements.filter(
+                (item) => new Date(item.eventDate) < today,
+              );
+              return (
+                <>
+                  {upcoming.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Hourglass className="w-4 h-4 text-[#C5222E]" />
+                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#C5222E]">
+                          Akan Datang ({upcoming.length})
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {upcoming.map((item) => {
+                          const badgeInfo = getCategoryBadge(item.category);
+                          return (
+                            <div
+                              key={item.id}
+                              className={`p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 ${
+                                item.isPinned ? 'ring-2 ring-[#C5222E]/40' : ''
+                              }`}
+                            >
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeInfo.color}`}>
+                                    {badgeInfo.label}
+                                  </span>
+                                  {item.isPinned && (
+                                    <span className="flex items-center gap-1 text-[11px] font-bold text-[#C5222E] dark:text-[#E03643]">
+                                      <Pin className="w-3.5 h-3.5 fill-[#C5222E] dark:fill-[#E03643]" />
+                                      <span>Penting</span>
+                                    </span>
+                                  )}
+                                </div>
+
+                                <MiniCountdown targetDate={item.eventDate} />
+
+                                <h3 className="font-extrabold text-lg text-[#1F1617] dark:text-[#F5EFEB] leading-snug">
+                                  {item.title}
+                                </h3>
+
+                                <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed line-clamp-4">
+                                  {item.content}
+                                </p>
+                              </div>
+
+                              <div className="pt-4 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex items-center justify-between text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <Calendar className="w-3.5 h-3.5 text-[#C5222E]" />
+                                  <span>{item.eventDate}</span>
+                                </div>
+
+                                <a
+                                  href="#layanan"
+                                  className="font-bold text-[#C5222E] dark:text-[#E03643] hover:underline flex items-center gap-0.5"
+                                >
+                                  <span>Layanan</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {past.length > 0 && (
+                    <details className="space-y-4 group">
+                      <summary className="cursor-pointer flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#1F1617] dark:hover:text-[#F5EFEB] list-none">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Sudah Berlalu ({past.length})</span>
+                        <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
+                      </summary>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 opacity-70">
+                        {past.map((item) => {
+                          const badgeInfo = getCategoryBadge(item.category);
+                          return (
+                            <div
+                              key={item.id}
+                              className="p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] flex flex-col justify-between space-y-6"
+                            >
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeInfo.color}`}>
+                                    {badgeInfo.label}
+                                  </span>
+                                </div>
+                                <h3 className="font-extrabold text-lg text-[#1F1617] dark:text-[#F5EFEB] leading-snug line-through opacity-60">
+                                  {item.title}
+                                </h3>
+                                <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed line-clamp-3">
+                                  {item.content}
+                                </p>
+                              </div>
+                              <div className="pt-4 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex items-center justify-between text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  <span>{item.eventDate}</span>
+                                </div>
+                                <span className="text-[10px] uppercase tracking-wider font-bold opacity-60">Sudah Berlalu</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  )}
+                </>
+              );
+            })() : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredAnnouncements.map((item) => {
+                  const badgeInfo = getCategoryBadge(item.category);
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-7 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 opacity-70"
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeInfo.color}`}>
+                            {badgeInfo.label}
+                          </span>
+                        </div>
+                        <h3 className="font-extrabold text-lg text-[#1F1617] dark:text-[#F5EFEB] leading-snug line-through opacity-60">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed line-clamp-3">
+                          {item.content}
+                        </p>
+                      </div>
+                      <div className="pt-4 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex items-center justify-between text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>{item.eventDate}</span>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-wider font-bold opacity-60">Sudah Berlalu</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -289,7 +450,7 @@ export default function AnnouncementBoard() {
                   GEREJA ISA ALMASIH DELIKSARI SEMARANG
                 </h5>
                 <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
-                  Jl. Kolonel Hadijanto, Deliksari, Gunungpati, Semarang
+                  Jl. Kolonel HR Hadijanto, Sekaran, Kec. Gn. Pati, Kota Semarang, Jawa Tengah 50229
                 </p>
                 <p className="text-xs font-bold text-[#C5222E]">
                   Tema Bulanan: &ldquo;Bertumbuh Kuat dalam Iman & Buah Roh&rdquo; (1 Kor 15:58)
@@ -304,19 +465,19 @@ export default function AnnouncementBoard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20]">
                     <span className="font-bold block">Ibadah Raya Umum</span>
-                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu, 09.00 - 11.00 WIB</span>
+                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu, 09.00 - 11.00 WIB (Gedung Utama)</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20]">
                     <span className="font-bold block">Grow Generation Youth</span>
-                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Sabtu, 18.00 - 20.00 WIB</span>
+                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Sabtu, 18.00 - 20.00 WIB (Bergantian: Minggu 1&3 Youth, 2&4 Komsel)</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20]">
                     <span className="font-bold block">COC Kidz (Sekolah Minggu)</span>
-                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu, 09.30 - 10.30 WIB</span>
+                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu, 09.30 - 10.30 WIB (Ruang Anak)</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20]">
-                    <span className="font-bold block">Wanita Hana / Komsel Ekklesia</span>
-                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu Bergantian (18.00 / 18.30 WIB)</span>
+                    <span className="font-bold block">HANA Wanita / Komsel Ekklesia</span>
+                    <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">Minggu, 18.00/18.30 WIB (Bergantian: Minggu 1&3 HANA, 2&4 Komsel)</span>
                   </div>
                 </div>
               </div>

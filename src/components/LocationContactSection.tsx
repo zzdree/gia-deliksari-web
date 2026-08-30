@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Navigation, 
-  ExternalLink, 
-  ChevronDown, 
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Navigation,
+  ExternalLink,
+  ChevronDown,
   HelpCircle,
   Clock,
   Sparkles
@@ -17,33 +17,39 @@ import { YouTubeIcon, InstagramIcon, WhatsAppIcon } from './Icons';
 export default function LocationContactSection() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const gmapsShareUrl =
-    process.env.NEXT_PUBLIC_GMAPS_SHARE_URL ||
-    'https://maps.google.com/?q=GIA+Deliksari+Semarang';
+  const gmapsShareUrl = 'https://maps.app.goo.gl/CZt65yeXt7hqxiup6';
 
   const faqs = [
     {
       q: 'Jam berapa ibadah raya umum hari Minggu di GIA Deliksari?',
-      a: 'Ibadah Raya Umum GIA Deliksari diadakan setiap hari Minggu pagi pukul 09.00 - 11.00 WIB di gedung gereja utama (Sanctuary).',
+      a: 'Ibadah Raya Umum GIA Deliksari diadakan setiap hari Minggu pagi pukul 09.00 - 11.00 WIB di gedung gereja utama (Gedung Utama).',
     },
     {
-      q: 'Apakah tersedia ibadah anak (Sekolah Minggu) saat ibadah raya?',
-      a: 'Ya, tersedia Ibadah Anak COC Kidz setiap Minggu pukul 09.30 - 10.30 WIB dengan pembagian kelas sesuai kelompok usia balita hingga anak-anak.',
+      q: 'Apakah tersedia ibadah anak (Sekolah Minggu/COC Kidz) saat ibadah raya?',
+      a: 'Ya, tersedia Ibadah Anak COC Kidz setiap Minggu pukul 09.30 - 10.30 WIB di Ruang Bethel dengan pembagian kelas sesuai kelompok usia balita hingga anak-anak.',
     },
     {
-      q: 'Bagaimana cara bergabung dengan kelompok sel (Komsel Ekklesia) & Pemuda?',
-      a: 'Anda dapat mengisi formulir pendaftaran di bagian Layanan Jemaat di website ini atau langsung menghubungi nomor WhatsApp Pastoral kami.',
+      q: 'Bagaimana cara bergabung dengan kelompok sel (Komsel Ekklesia) & Pemuda (Grow Generation)?',
+      a: 'Anda dapat mengisi formulir pendaftaran di bagian Layanan Jemaat di website ini atau langsung menghubungi nomor WhatsApp Pastoral kami: 089620961103.',
     },
     {
       q: 'Apakah lokasi gereja dekat dengan kampus UNNES Gunungpati?',
-      a: 'Benar, GIA Deliksari beralamat di Jl. Kolonel Hadijanto, Deliksari, Gunungpati, Semarang, berjarak hanya beberapa menit dari kawasan kampus UNNES.',
+      a: 'Benar, GIA Deliksari beralamat di Jl. Kolonel HR Hadijanto, Sekaran, Kec. Gn. Pati, Kota Semarang, Jawa Tengah 50229, berjarak hanya beberapa menit dari kawasan kampus UNNES.',
+    },
+    {
+      q: 'Bagaimana jadwal Ibadah Youth (Grow Generation) dan Komsel Youth?',
+      a: 'Ibadah Youth & Komsel Youth digelar setiap Sabtu pukul 18.00 - 20.00 WIB di Gedung Utama atau Ruang Bethel. Pola selang-seling 4 minggu: Minggu 1 & 3 = Ibadah Youth, Minggu 2 & 4 = Ibadah Komsel. Referensi: Sabtu 29 Agustus 2026 = Ibadah Youth.',
+    },
+    {
+      q: 'Bagaimana jadwal Ibadah Wanita (HANA) dan Komsel Ekklesia?',
+      a: 'Ibadah Wanita (HANA) setiap Jumat pukul 17.30 - 19.00 WIB. Komsel Ekklesia setiap Selasa pukul 18.30 - 20.00 WIB. Keduanya di Gedung Utama. Pola selang-seling 4 minggu: Minggu 1 & 3 = Ibadah HANA, Minggu 2 & 4 = Komsel Ekklesia. Referensi: Jumat 4 September 2026 = Ibadah HANA.',
     },
   ];
 
   return (
     <section id="kontak" className="py-24 bg-[#F7F2E8]/60 dark:bg-[#1A0E10]/60 border-y border-[#EBDDCF] dark:border-[#3A1C20] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
@@ -60,7 +66,7 @@ export default function LocationContactSection() {
 
         {/* 2 Big Columns: Map & Info + FAQ */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
-          
+
           {/* Left Column: Interactive Google Map */}
           <div className="lg:col-span-7 space-y-6">
             <div className="p-4 sm:p-5 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
@@ -108,28 +114,28 @@ export default function LocationContactSection() {
                     Alamat Gedung Gereja
                   </h4>
                   <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed mt-0.5">
-                    Jl. Kolonel Hadijanto, Deliksari, Gunung Pati, Kota Semarang, Jawa Tengah 50229 (Kawasan UNNES)
+                    Jl. Kolonel HR Hadijanto, Sekaran, Kec. Gn. Pati, Kota Semarang, Jawa Tengah 50229 (Kawasan UNNES)
                   </p>
                 </div>
               </div>
 
               <div className="pt-3 border-t border-[#EBDDCF]/60 dark:border-[#3A1C20]/60 flex flex-wrap items-center gap-3">
                 <a
-                  href="https://api.whatsapp.com/send?phone=6281234567890"
+                  href="https://api.whatsapp.com/send?phone=6289620961103"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2.5 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] hover:bg-[#FCD2C7] text-xs font-bold flex items-center gap-2 transition-colors"
                 >
                   <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
-                  <span>WhatsApp: +62 812-3456-7890</span>
+                  <span>WhatsApp: 0896-2096-1103</span>
                 </a>
 
                 <a
-                  href="mailto:info@giadeliksari.org"
+                  href="mailto:giadeliksarichurch@gmail.com"
                   className="px-4 py-2.5 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] hover:text-[#C5222E] text-xs font-bold flex items-center gap-2 transition-colors"
                 >
                   <Mail className="w-4 h-4 text-[#C5222E]" />
-                  <span>info@giadeliksari.org</span>
+                  <span>giadeliksarichurch@gmail.com</span>
                 </a>
               </div>
             </div>
@@ -143,7 +149,7 @@ export default function LocationContactSection() {
                 <span>Pertanyaan yang Sering Diajukan (FAQ)</span>
               </div>
               <h3 className="text-2xl font-extrabold text-[#1F1617] dark:text-[#F5EFEB]">
-                Informasi Seputar Ibadah
+                Informasi Seputar Ibadah & Pelayanan
               </h3>
             </div>
 
@@ -191,8 +197,37 @@ export default function LocationContactSection() {
                   className="p-3 rounded-xl bg-white dark:bg-[#1A0E10] text-[#1F1617] dark:text-[#F5EFEB] hover:text-[#C5222E] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center gap-2 transition-colors"
                 >
                   <InstagramIcon className="w-4 h-4 text-[#C5222E]" />
-                  <span>@giadeliksari</span>
+                  <span>@giadeliksari (Gereja)</span>
                 </a>
+                <a
+                  href="https://www.instagram.com/growgeneration_/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl bg-white dark:bg-[#1A0E10] text-[#1F1617] dark:text-[#F5EFEB] hover:text-[#C5222E] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center gap-2 transition-colors"
+                >
+                  <InstagramIcon className="w-4 h-4 text-[#C5222E]" />
+                  <span>@growgeneration_ (Youth)</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/cockidz/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl bg-white dark:bg-[#1A0E10] text-[#1F1617] dark:text-[#F5EFEB] hover:text-[#C5222E] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center gap-2 transition-colors"
+                >
+                  <InstagramIcon className="w-4 h-4 text-[#C5222E]" />
+                  <span>@cockidz (Sekolah Minggu)</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/pwkhana_/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl bg-white dark:bg-[#1A0E10] text-[#1F1617] dark:text-[#F5EFEB] hover:text-[#C5222E] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center gap-2 transition-colors"
+                >
+                  <InstagramIcon className="w-4 h-4 text-[#C5222E]" />
+                  <span>@pwkhana_ (Wanita HANA)</span>
+                </a>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold">
                 <a
                   href="https://www.youtube.com/@GIADeliksariSemarang"
                   target="_blank"
@@ -200,7 +235,7 @@ export default function LocationContactSection() {
                   className="p-3 rounded-xl bg-white dark:bg-[#1A0E10] text-[#1F1617] dark:text-[#F5EFEB] hover:text-[#C5222E] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center gap-2 transition-colors"
                 >
                   <YouTubeIcon className="w-4 h-4 text-[#C5222E]" />
-                  <span>GIA Deliksari</span>
+                  <span>YouTube: GIA Deliksari</span>
                 </a>
               </div>
             </div>

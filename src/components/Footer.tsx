@@ -110,6 +110,24 @@ export default function Footer() {
                 <InstagramIcon className="w-4 h-4" />
               </a>
               <a
+                href="https://www.instagram.com/growgeneration_/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram Grow Generation Youth"
+                className="w-9 h-9 rounded-xl bg-[#F7F2E8] dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center justify-center text-[#5A4D4E] hover:text-[#C5222E] transition-colors"
+              >
+                <InstagramIcon className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.instagram.com/cockidz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram COC Kidz"
+                className="w-9 h-9 rounded-xl bg-[#F7F2E8] dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center justify-center text-[#5A4D4E] hover:text-[#C5222E] transition-colors"
+              >
+                <InstagramIcon className="w-4 h-4" />
+              </a>
+              <a
                 href="https://www.youtube.com/@GIADeliksariSemarang"
                 target="_blank"
                 rel="noopener noreferrer"

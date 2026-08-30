@@ -1,63 +1,82 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Heart, 
-  Copy, 
-  Check, 
-  ShieldCheck, 
+import {
+  Heart,
+  Copy,
+  Check,
+  ShieldCheck,
   ExternalLink,
   Sparkles,
-  CreditCard
+  CreditCard,
+  QrCode,
+  Box
 } from 'lucide-react';
 import { WhatsAppIcon } from './Icons';
+
+interface GivingMethod {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  badge: string;
+  badgeColor: string;
+  details?: string;
+  copyText?: string;
+  accentColor: string;
+}
 
 export default function GivingSection() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const bankAccounts = [
+  const givingMethods: GivingMethod[] = [
     {
-      bank: 'BCA (Bank Central Asia)',
-      number: '246-098-7711',
-      rawNumber: '2460987711',
-      holder: 'GIA Deliksari Semarang',
-      badge: 'Persembahan & Persepuluhan',
+      id: 'offline',
+      title: 'Kotak Persembahan (Offline)',
+      description: 'Persembahan kasih & perpuluhan dapat diletakkan langsung di kotak persembahan yang tersedia di lobi gedung utama saat ibadah Minggu maupun ibadah khusus.',
+      icon: <Box className="w-8 h-8" />,
+      color: 'bg-[#C5222E]',
+      badge: 'Langsung di Gereja',
       badgeColor: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',
       accentColor: 'border-t-4 border-t-[#C5222E]',
     },
     {
-      bank: 'Bank Mandiri',
-      number: '136-00-1928374-1',
-      rawNumber: '1360019283741',
-      holder: 'Gereja Isa Almasih Deliksari',
-      badge: 'Pembangunan & Misi',
+      id: 'transfer',
+      title: 'Transfer Bank (Rekening Gereja)',
+      description: 'Transfer persembahan melalui rekening bank gereja. Nomor rekening resmi akan diumumkan oleh pengurus keuangan. Silakan hubungi WhatsApp pastoral untuk info rekening terkini.',
+      icon: <CreditCard className="w-8 h-8" />,
+      color: 'bg-[#C83E20]',
+      badge: 'Transfer Bank',
       badgeColor: 'bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72] dark:border-[#57241A]',
+      copyText: 'Hubungi 0896-2096-1103 untuk nomor rekening',
       accentColor: 'border-t-4 border-t-[#C83E20]',
     },
     {
-      bank: 'BRI (Bank Rakyat Indonesia)',
-      number: '0341-01-002938-53-0',
-      rawNumber: '034101002938530',
-      holder: 'GIA Deliksari',
-      badge: 'Diakonia & Sosial Jemaat',
-      badgeColor: 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]',
-      accentColor: 'border-t-4 border-t-[#C59B27]',
+      id: 'qris',
+      title: 'QRIS (Digital Payment)',
+      description: 'Scan QRIS yang tersedia di lobi gedung atau layar proyektor saat ibadah untuk persembahan digital via e-wallet (GoPay, OVO, DANA, ShopeePay, dll). QRIS resmi akan diumumkan pengurus keuangan.',
+      icon: <QrCode className="w-8 h-8" />,
+      color: 'bg-[#16A34A]',
+      badge: 'Scan & Bayar',
+      badgeColor: 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0] dark:bg-[#142A1B] dark:text-[#4ADE80] dark:border-[#052E16]',
+      accentColor: 'border-t-4 border-t-[#16A34A]',
     },
   ];
 
-  const handleCopy = (rawNumber: string, index: number) => {
-    navigator.clipboard.writeText(rawNumber);
+  const handleCopy = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2500);
   };
 
   const whatsappConfirmUrl =
-    'https://api.whatsapp.com/send?phone=6281234567890&text=Syalom%20GIA%20Deliksari,%20saya%20telah%20mentransfer%20persembahan%20kasih.%20Berikut%20bukti%20transfernya:';
+    'https://api.whatsapp.com/send?phone=6289620961103&text=Syalom%20GIA%20Deliksari,%20saya%20telah%20mentransfer%20persembahan%20kasih.%20Berikut%20bukti%20transfernya:';
 
   return (
     <section id="persembahan" className="py-24 bg-[#F7F2E8]/60 dark:bg-[#1A0E10]/60 border-y border-[#EBDDCF] dark:border-[#3A1C20] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
@@ -72,56 +91,57 @@ export default function GivingSection() {
           </p>
         </div>
 
-        {/* 3 Bank Cards Grid */}
+        {/* 3 Giving Methods Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {bankAccounts.map((acc, idx) => (
+          {givingMethods.map((method, idx) => (
             <div
-              key={acc.bank}
-              className={`p-7 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 ${acc.accentColor}`}
+              key={method.id}
+              className={`p-7 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 ${method.accentColor}`}
             >
               <div className="space-y-4">
-                <span className={`inline-block px-3 py-1 rounded-xl text-xs font-bold border ${acc.badgeColor}`}>
-                  {acc.badge}
-                </span>
+                <div className="flex items-center gap-3">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white ${method.color}`}>
+                    {method.icon}
+                  </div>
+                  <span className={`inline-block px-3 py-1 rounded-xl text-xs font-bold border ${method.badgeColor}`}>
+                    {method.badge}
+                  </span>
+                </div>
 
                 <div>
                   <h3 className="font-extrabold text-lg text-[#1F1617] dark:text-[#F5EFEB]">
-                    {acc.bank}
+                    {method.title}
                   </h3>
-                  <p className="text-xs text-[#6E5D5F] dark:text-[#B5A1A3] mt-0.5">
-                    a.n. {acc.holder}
-                  </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#FDFBF7] dark:bg-[#1A0E10] border border-[#EBDDCF] dark:border-[#3A1C20]">
-                  <span className="text-xs text-[#6E5D5F] dark:text-[#B5A1A3] block mb-1">Nomor Rekening:</span>
-                  <span className="font-mono text-lg font-black text-[#1F1617] dark:text-white tracking-wide block">
-                    {acc.number}
-                  </span>
-                </div>
-              </div>
+                <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
+                  {method.description}
+                </p>
 
-              <button
-                type="button"
-                onClick={() => handleCopy(acc.rawNumber, idx)}
-                className={`w-full py-3.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  copiedIndex === idx
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#FDF0F0] dark:hover:bg-[#331418] hover:text-[#C5222E]'
-                }`}
-              >
-                {copiedIndex === idx ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Nomor Rekening Tersalin!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-[#C5222E] dark:text-[#E03643]" />
-                    <span>Salin Nomor Rekening</span>
-                  </>
+                {method.copyText && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(method.copyText!, idx)}
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      copiedIndex === idx
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#FDF0F0] dark:hover:bg-[#331418] hover:text-[#C5222E]'
+                    }`}
+                  >
+                    {copiedIndex === idx ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Tersalin!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-[#C5222E] dark:text-[#E03643]" />
+                        <span>Salin Info</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           ))}
         </div>
