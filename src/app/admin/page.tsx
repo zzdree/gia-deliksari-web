@@ -58,19 +58,101 @@ import {
 import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
 import UploadPhotoModal from '@/components/UploadPhotoModal';
 import { useToast } from '@/components/admin/useToast';
-import { useAdminAuth } from '@/components/admin/useAdminAuth';
 import { useAdminData } from '@/components/admin/useAdminData';
+
+type Role = 'super' | 'admin' | 'treasurer';
+
+interface AuthUser {
+  id: string;
+  username: string;
+  role: Role;
+  display_name: string | null;
+}
+
+function useCurrentUser() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check existing session on mount
+  useEffect(() => {
+    fetch('/api/auth/check')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated && (d.user?.role === 'super' || d.user?.role === 'admin')) {
+          setUser(d.user);
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAuthError(data.error || 'Login gagal');
+        return;
+      }
+      if (data.user?.role !== 'super' && data.user?.role !== 'admin') {
+        setAuthError('Akses ditolak. Halaman ini khusus admin/operator.');
+        return;
+      }
+      setUser(data.user);
+      setUsername('');
+      setPassword('');
+    } catch {
+      setAuthError('Terjadi kesalahan koneksi');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/login', { method: 'DELETE' });
+    } catch {
+      /* ignore */
+    }
+    setUser(null);
+    setUsername('');
+    setPassword('');
+    setAuthError(null);
+  };
+
+  return {
+    user,
+    authChecked,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    authError,
+    handleLogin,
+    handleLogout,
+  };
+}
 
 export default function AdminPage() {
   // Cross-tab infrastructure: auth, data, toast. See hooks/ for details.
   const {
-    isAuthenticated,
-    passwordInput,
-    setPasswordInput,
+    user: authUser,
+    authChecked,
+    username,
+    setUsername,
+    password,
+    setPassword,
     authError,
-    handleLogin: handleLoginSubmit,
+    handleLogin,
     handleLogout,
-  } = useAdminAuth();
+  } = useCurrentUser();
 
   // Toast (placeholder — assigned after showToast is in scope below)
   const { showToast, ToastView } = useToast();
@@ -93,7 +175,7 @@ export default function AdminPage() {
     setGallery,
     requests,
     setRequests,
-  } = useAdminData(isAuthenticated, showToast);
+  } = useAdminData(authUser !== null, showToast);
 
   // Announcement Form State
   const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
@@ -214,8 +296,6 @@ export default function AdminPage() {
   });
 
   // Notification Toast — provided by useToast() hook above
-  const handleLogin = (e: React.FormEvent) =>
-    handleLoginSubmit(e, () => showToast('Login Berhasil! Selamat Datang Majelis GIA Deliksari'));
 
   // Announcement Handlers
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
@@ -509,7 +589,15 @@ export default function AdminPage() {
   // ----------------------------------------------------
   // LOGIN SCREEN
   // ----------------------------------------------------
-  if (!isAuthenticated) {
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#FDFBF7] dark:bg-[#150B0D]">
+        <div className="animate-pulse text-[#6E5D5F] dark:text-[#B5A1A3]">Memuat…</div>
+      </main>
+    );
+  }
+
+  if (!authUser) {
     return (
       <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
         <Navbar />
@@ -546,8 +634,8 @@ export default function AdminPage() {
                   type="password"
                   required
                   autoFocus
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password admin..."
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] text-sm focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all placeholder:text-stone-400"
                 />

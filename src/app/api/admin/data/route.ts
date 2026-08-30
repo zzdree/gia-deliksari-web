@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE, hasValidAdminSession } from '@/lib/admin-session';
+import { requireRole } from '@/lib/auth';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 
 /**
  * Server-side mutation gateway for the admin portal.
  *
- * The browser NEVER talks to Supabase with elevated privileges: all writes
- * (and reads of non-public tables) flow through here so the signed admin
- * session cookie is enforced on every operation. Uses the SERVICE ROLE key
- * server-side; Row Level Security stays enabled for everyone else.
+ * Multi-role auth (Phase 3): requires session cookie with role in
+ * ['super', 'admin']. Uses the new gia_session cookie + bcrypt user table
+ * (see src/lib/auth.ts). Legacy ADMIN_SESSION_COOKIE cookie is no longer
+ * accepted.
  */
 
 const TABLE_WHITELIST = [
@@ -53,10 +53,8 @@ function getClientOrError(): { client: ReturnType<typeof getSupabaseAdmin>; erro
 }
 
 export async function GET(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!hasValidAdminSession(session)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await requireRole(req, ['super', 'admin']);
+  if (guard instanceof Response) return guard;
 
   const { client, error } = getClientOrError();
   if (error || !client) return error!;
@@ -76,10 +74,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!hasValidAdminSession(session)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await requireRole(req, ['super', 'admin']);
+  if (guard instanceof Response) return guard;
 
   const { client, error } = getClientOrError();
   if (error || !client) return error!;
@@ -115,10 +111,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!hasValidAdminSession(session)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await requireRole(req, ['super', 'admin']);
+  if (guard instanceof Response) return guard;
 
   const { client, error } = getClientOrError();
   if (error || !client) return error!;
