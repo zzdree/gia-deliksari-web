@@ -38,14 +38,6 @@ export default function AboutSection() {
       badge: 'Pemuda Pastor',
       instagram: 'https://www.instagram.com/noelloveano_/',
     },
-    {
-      name: 'Kak Vellin',
-      role: 'Pelayanan Generasi & Media',
-      desc: 'Mendukung pertumbuhan ibadah anak COC Kidz, pujian penyembahan, dan persekutuan jemaat.',
-      image: '/images/pastor-yohanes.jpg',
-      badge: 'Generasi & Musik',
-      instagram: 'https://www.instagram.com/cockidz/',
-    },
   ];
 
   return (

@@ -173,7 +173,7 @@ const faqSchema = {
       name: 'Siapa gembala sidang GIA Deliksari Semarang?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Gembala Sidang GIA Deliksari adalah Ps. Yohanes Sutono bersama Ibu Gembala Ibu Santini, didukung Kak Noel Yosan, S.Th. dan Vellin.',
+        text: 'Gembala Sidang GIA Deliksari adalah Pdt. Yohanes Sutono, S.Th., M.Ag. bersama Ibu Gembala Ibu Santini Lidyawati, didukung Youth Pastor Sdr. Noel Yosan Loveano, S.Th.',
       },
     },
   ],

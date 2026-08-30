@@ -105,7 +105,9 @@ export default function ScheduleSection() {
       day: 'Selasa – Jumat',
       time: '05.00 - 05:30 WIB',
       location: 'Gedung Utama + Zoom',
-      description: 'Doa pagi harian. Onsite di Gedung Utama & online via Zoom. Lihat INFO.md untuk link Zoom.',
+      description:
+        'Doa pagi harian. Onsite di Gedung Utama & online via Zoom. ' +
+        'Link Zoom: https://us06web.zoom.us/j/83715591277?pwd=Qc52Xla9k68ZjD3rViMRIaDiXgaWkf.1',
       category: 'doa-pagi',
       icon: '🕯️',
     },

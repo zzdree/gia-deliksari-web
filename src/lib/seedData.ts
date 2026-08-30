@@ -1,220 +1,52 @@
 import { Announcement, ServantRoster, InventoryItem, Sermon, GalleryItem, MinistryRequest } from '@/types';
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  // === AKAN DATANG (eventDate >= 2026-08-31, hari ini) ===
+  // === SAMPLE MINIMAL ===
+  // Hanya 1 placeholder supaya landing publik tidak kosong saat DB
+  // belum terisi. Admin dihimbau untuk menghapus entry ini dan
+  // menggantinya dengan warta jemaat yang sebenarnya melalui
+  // Portal Admin (/admin → tab Warta Jemaat).
   {
-    id: 'ann-1',
-    title: 'Ibadah Raya Minggu — Tema: Bertumbuh Dalam Kasih & Pengharapan',
+    id: 'ann-sample-1',
+    title: 'Selamat Datang di GIA Deliksari',
     category: 'general',
-    content: 'Mari hadir bersama keluarga dalam Ibadah Raya Minggu. Pembicara: Pdt. Yohanes Sutono, S.Th., M.Ag. Dilayani oleh Tim Musik DS Worship. Bertempat di Gedung Utama.',
-    eventDate: '2026-09-06',
-    endDate: '2026-09-06',
-    isPinned: true,
-    isPublished: true,
-    badgeText: 'Minggu Depan',
-    author: 'Sekretariat GIA Deliksari',
-    createdAt: '2026-08-28T08:00:00Z',
-  },
-  {
-    id: 'ann-2',
-    title: 'Ibadah Youth (Grow Generation) — Sabtu Sore',
-    category: 'youth',
-    content: 'Ibadah Youth mingguan untuk seluruh pemuda & remaja. Pembicara: Sdr. Noel Yosan Loveano, S.Th. Bertempat di Gedung Utama atau Ruang Bethel. Latihan musik sore sebelumnya pukul 16.30 WIB.',
-    eventDate: '2026-09-12',
-    endDate: '2026-09-12',
+    content:
+      'Portal informasi resmi jemaat GIA Deliksari Semarang. Warta jemaat dan jadwal pelayanan akan ditampilkan di sini setelah pengurus gereja menginputnya melalui Portal Admin.',
+    eventDate: '2099-12-31',
+    endDate: '2099-12-31',
     isPinned: false,
     isPublished: true,
-    badgeText: 'Youth Event',
-    author: 'Tim PRBK Grow Generation',
-    createdAt: '2026-08-28T09:00:00Z',
+    badgeText: 'Placeholder',
+    author: 'Tim Media GIA Deliksari',
+    createdAt: '2026-08-31T00:00:00Z',
   },
-  {
-    id: 'ann-3',
-    title: 'COC Kidz: Sekolah Minggu + Aktivitas Kreatif',
-    category: 'kidz',
-    content: 'Ibadah Sekolah Minggu untuk anak-anak Balita – SD dengan pembelajaran Alkitab, pujian, dan aktivitas kreatif sesuai usia. Bertempat di Ruang Bethel pukul 09.30 – 10.30 WIB.',
-    eventDate: '2026-09-06',
-    endDate: '2026-09-06',
-    isPinned: false,
-    isPublished: true,
-    badgeText: 'Sekolah Minggu',
-    author: 'Tim Guru KAA — Sdri. Yemima P.',
-    createdAt: '2026-08-28T10:00:00Z',
-  },
-  {
-    id: 'ann-4',
-    title: 'Ibadah Wanita HANA — Jumat Sore',
-    category: 'hana',
-    content: 'Persekutuan kaum wanita & ibu-ibu Hana Fellowship. Dilayani oleh Ibu Santini Lidyawati & tim pengurus Hana (Ibu Penskilla, Ibu Siska, Ibu Sulistya). Bertempat di Gedung Utama pukul 17.30 – 19.00 WIB.',
-    eventDate: '2026-09-04',
-    endDate: '2026-09-04',
-    isPinned: false,
-    isPublished: true,
-    badgeText: 'Ibadah Wanita',
-    author: 'Pengurus Hana',
-    createdAt: '2026-08-28T11:00:00Z',
-  },
-  {
-    id: 'ann-5',
-    title: 'Pemeriksaan Kesehatan Gratis Jemaat & Warga',
-    category: 'general',
-    content: 'Pelayanan kasih masyarakat berupa cek gula darah, tensi, dan konsultasi kesehatan cuma-cuma seusai ibadah minggu.',
-    eventDate: '2026-09-13',
-    endDate: '2026-09-13',
-    isPinned: false,
-    isPublished: true,
-    badgeText: 'Bulan Ini',
-    author: 'Diakonia GIA Deliksari',
-    createdAt: '2026-08-28T12:00:00Z',
-  }
   // === CATATAN: warta yang sudah berlalu (eventDate < hari ini)
   //     TIDAK ditampilkan di landing publik — lihat AnnouncementBoard.tsx
-  //     filter `isPublished` + waktu. Tersimpan di Supabase untuk arsip admin. ===
+  //     filter isPublished + waktu. Tersimpan di Supabase untuk arsip admin. ===
 ];
 
 export const INITIAL_ROSTER: ServantRoster[] = [
-  // === Ibadah Raya Minggu (06 September 2026) ===
+  // === SAMPLE MINIMAL ===
+  // Hanya 1 placeholder supaya tabel jadwal pelayanan tidak kosong
+  // saat DB belum terisi. Admin dihimbau untuk menghapus entry ini dan
+  // menggantinya dengan roster ibadah yang sebenarnya melalui
+  // Portal Admin (/admin → tab Roster Pelayanan).
+  //
+  // Field 'serviceDate' sengaja di masa depan (tahun 2099) sehingga
+  // entry ini tidak ditampilkan sebagai 'Akan Datang' yang menggantung
+  // jemaat. Filter kategori akan menampilkan tabel kosong jika semua
+  // entry adalah placeholder.
   {
-    id: 'rst-1',
+    id: 'rst-sample-1',
     serviceCategory: 'general',
-    serviceDate: '2026-09-06',
-    role: 'Pengkhotbah',
-    servantName: 'Pdt. Yohanes Sutono, S.Th., M.Ag.',
-    phone: '08123456789',
-    status: 'confirmed',
-    notes: 'Ibadah Raya Minggu — Gedung Utama',
-    createdAt: '2026-08-28T00:00:00Z',
+    serviceDate: '2099-12-31',
+    role: '(Placeholder)',
+    servantName: '(Belum ada petugas terjadwal)',
+    phone: '',
+    status: 'pending',
+    notes: 'Placeholder. Akan diisi oleh admin melalui Portal Admin.',
+    createdAt: '2026-08-31T00:00:00Z',
   },
-  {
-    id: 'rst-2',
-    serviceCategory: 'general',
-    serviceDate: '2026-09-06',
-    role: 'Worship Leader (WL)',
-    servantName: 'Bro. Andreas & Sis. Maria',
-    phone: '08123456790',
-    status: 'confirmed',
-    notes: 'Latihan musik Sabtu 19.00 WIB',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-3',
-    serviceCategory: 'general',
-    serviceDate: '2026-09-06',
-    role: 'Pemain Musik / Full Band',
-    servantName: 'DS Worship Team (Korg primary, Medeli filler, Bass, Gitar Visioner, Drum Akustik Visioner + Pad)',
-    phone: '08123456791',
-    status: 'confirmed',
-    notes: 'Soundcheck Minggu 06.30 WIB',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-4',
-    serviceCategory: 'general',
-    serviceDate: '2026-09-06',
-    role: 'Multimedia / Operator Slide',
-    servantName: 'David & Tim Media',
-    phone: '08123456792',
-    status: 'confirmed',
-    notes: 'Persiapkan lirik lagu & tayangan warta',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-5',
-    serviceCategory: 'general',
-    serviceDate: '2026-09-06',
-    role: 'Usher & Kolektan',
-    servantName: 'Bpk. Budi, Ibu Lisa, Bpk. Hendra',
-    phone: '08123456793',
-    status: 'confirmed',
-    notes: 'Menyambut jemaat & mengelola 3 kotak persembahan',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-
-  // === COC Kidz (Sekolah Minggu) ===
-  {
-    id: 'rst-6',
-    serviceCategory: 'kidz',
-    serviceDate: '2026-09-06',
-    role: 'Ketua / Guru Cerita Firman',
-    servantName: 'Sdri. Yemima Purnamasari',
-    phone: '08123456794',
-    status: 'confirmed',
-    notes: 'Bertempat di Ruang Bethel',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-7',
-    serviceCategory: 'kidz',
-    serviceDate: '2026-09-06',
-    role: 'Sekretaris',
-    servantName: 'Sdri. Kesya',
-    phone: '08123456795',
-    status: 'confirmed',
-    notes: 'Absensi & buku kegiatan anak',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-
-  // === Youth (Grow Generation) - Sabtu 29 Agustus 2026 = Ibadah YOUTH ===
-  // Pola 4-minggu: 29 Ags = Youth, 5 Sep = Komsel, 12 Sep = Youth, 19 Sep = Komsel
-  {
-    id: 'rst-8',
-    serviceCategory: 'youth',
-    serviceDate: '2026-08-29',
-    role: 'Pembicara / Firman Youth',
-    servantName: 'Sdr. Noel Yosan Loveano, S.Th. (Youth Pastor)',
-    phone: '08123456796',
-    status: 'confirmed',
-    notes: 'Ibadah Youth (Sabtu ke-1 bulan September) — Gedung Utama',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-9',
-    serviceCategory: 'youth',
-    serviceDate: '2026-08-29',
-    role: 'Ketua Youth',
-    servantName: 'Sdri. Lara Tampubolon',
-    phone: '08123456797',
-    status: 'confirmed',
-    notes: 'Koordinasi keseluruhan ibadah Youth',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-10',
-    serviceCategory: 'youth',
-    serviceDate: '2026-09-12',
-    role: 'Pembicara / Firman Youth',
-    servantName: 'Sdr. Noel Yosan Loveano, S.Th. (Youth Pastor)',
-    phone: '08123456796',
-    status: 'confirmed',
-    notes: 'Ibadah Youth (Sabtu ke-3 bulan September)',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-
-  // === Hana (Wanita) - Jumat 4 September 2026 = Ibadah HANA ===
-  // Pola 4-minggu: 4 Sep = Hana, 11 Sep = Hana, 18 Sep = Hana, 25 Sep = Hana
-  // (Jumat hanya untuk HANA; Komsel Ekklesia di Selasa)
-  {
-    id: 'rst-11',
-    serviceCategory: 'hana',
-    serviceDate: '2026-09-04',
-    role: 'Pembina & Doa Hana Fellowship',
-    servantName: 'Ibu Santini Lidyawati',
-    phone: '08123456798',
-    status: 'confirmed',
-    notes: 'Ibadah HANA pertama bulan September — Gedung Utama 17.30 WIB',
-    createdAt: '2026-08-28T00:00:00Z',
-  },
-  {
-    id: 'rst-12',
-    serviceCategory: 'hana',
-    serviceDate: '2026-09-04',
-    role: 'Ketua Hana',
-    servantName: 'Ibu Penskilla',
-    phone: '08123456799',
-    status: 'confirmed',
-    notes: 'Koordinasi jemaat wanita & persiapan',
-    createdAt: '2026-08-28T00:00:00Z',
-  }
 ];
 
 export const INITIAL_INVENTORY: InventoryItem[] = [
