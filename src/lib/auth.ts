@@ -202,16 +202,29 @@ function normalizeUser(row: any): User {
 }
 
 async function fetchUserByCredential(username: string, plainPassword: string): Promise<User | null> {
-  if (!isSupabaseAdminConfigured() || !supabaseAdmin) return null;
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
+    console.error('[auth] supabase admin NOT configured');
+    return null;
+  }
   const { data, error } = await supabaseAdmin
     .from('users')
     .select('id, username, password_hash, roles, role, display_name, active, last_login_at, created_at')
     .eq('username', username)
     .eq('active', true)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) {
+    console.error('[auth] supabase query error for', username, ':', error.message);
+    return null;
+  }
+  if (!data) {
+    console.error('[auth] no user found for', username, '(active=true filter)');
+    return null;
+  }
   const ok = await verifyPassword(plainPassword, data.password_hash);
-  if (!ok) return null;
+  if (!ok) {
+    console.error('[auth] bcrypt mismatch for', username, 'hash-prefix:', data.password_hash?.slice(0, 7));
+    return null;
+  }
   return normalizeUser(data);
 }
 
