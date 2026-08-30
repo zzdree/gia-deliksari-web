@@ -33,7 +33,7 @@ type Role = 'super' | 'admin' | 'treasurer';
 interface AuthUser {
   id: string;
   username: string;
-  role: Role;
+  roles: Role[];
   display_name: string | null;
 }
 
@@ -119,7 +119,7 @@ export default function KasPage() {
       .then((d) => {
         if (!d.authenticated) {
           // Stay on login screen
-        } else if (d.user?.role !== 'super' && d.user?.role !== 'treasurer') {
+        } else if (!d.user?.roles?.some((r: string) => r === 'super' || r === 'treasurer')) {
           showToast('Akses ditolak. /kas khusus untuk bendahara youth.');
           router.replace('/home');
         } else {
@@ -175,7 +175,7 @@ export default function KasPage() {
         setAuthError(data.error || 'Login gagal');
         return;
       }
-      if (data.user?.role !== 'super' && data.user?.role !== 'treasurer') {
+      if (!data.user?.roles?.some((r: string) => r === 'super' || r === 'treasurer')) {
         setAuthError('Akses ditolak. /kas khusus untuk bendahara.');
         return;
       }
@@ -431,7 +431,7 @@ export default function KasPage() {
               <span className="font-bold text-[#1F1617] dark:text-[#F5EFEB]">
                 {authUser?.display_name || authUser?.username}
               </span>{' '}
-              ({authUser?.role})
+              ({authUser?.roles?.join(', ') || authUser?.username})
             </p>
           </div>
 

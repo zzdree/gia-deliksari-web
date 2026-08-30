@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, hashPassword } from '@/lib/auth';
+import { requireRole, hashPassword, Role } from '@/lib/auth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 
 /**
- * PATCH /api/users/[id] — update role / display_name / active / password
- * (super only).
- *
- * Body (any subset): { role?, display_name?, active?, password? }
+ * PATCH /api/users/[id] — update user (super only).
+ * Body (any subset): { roles?, display_name?, active?, password? }
+ *   - roles: array of role strings (replaces existing)
+ *   - password: 4-64 chars (PIN 4 digit ok)
  */
 export async function PATCH(
   req: NextRequest,
@@ -21,7 +21,7 @@ export async function PATCH(
   const { id } = await params;
 
   let body: {
-    role?: unknown;
+    roles?: unknown;
     display_name?: unknown;
     active?: unknown;
     password?: unknown;
@@ -33,8 +33,15 @@ export async function PATCH(
   }
 
   const patch: Record<string, unknown> = {};
-  if (typeof body.role === 'string' && ['super', 'admin', 'treasurer'].includes(body.role)) {
-    patch.role = body.role;
+  if (Array.isArray(body.roles)) {
+    const validRoles: Role[] = ['super', 'admin', 'treasurer'];
+    const roles = Array.from(
+      new Set((body.roles as unknown[]).filter((r): r is Role => validRoles.includes(r as Role))),
+    );
+    if (roles.length === 0) {
+      return NextResponse.json({ error: 'Minimal 1 role valid' }, { status: 400 });
+    }
+    patch.roles = roles;
   }
   if (typeof body.display_name === 'string') {
     patch.display_name = body.display_name.trim() || null;
@@ -45,7 +52,7 @@ export async function PATCH(
   if (typeof body.password === 'string' && body.password.length >= 4) {
     patch.password_hash = await hashPassword(body.password);
   } else if (typeof body.password === 'string' && body.password.length > 0) {
-    return NextResponse.json({ error: 'Password minimal 4 karakter' }, { status: 400 });
+    return NextResponse.json({ error: 'PIN/password minimal 4 karakter' }, { status: 400 });
   }
 
   if (Object.keys(patch).length === 0) {
@@ -56,7 +63,7 @@ export async function PATCH(
     .from('users')
     .update(patch)
     .eq('id', id)
-    .select('id, username, role, display_name, active, last_login_at, created_at')
+    .select('id, username, roles, display_name, active, last_login_at, created_at')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -65,8 +72,6 @@ export async function PATCH(
 
 /**
  * DELETE /api/users/[id] — soft-deactivate (super only).
- * We never hard-delete users (audit trail). Setting active=false preserves
- * the row for historical login records.
  */
 export async function DELETE(
   req: NextRequest,

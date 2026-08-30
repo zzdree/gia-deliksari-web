@@ -2,22 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   login,
   setSessionCookie,
+  clearSessionCookie,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
+  checkLoginRateLimit,
+  recordLoginFailure,
+  clearLoginFailures,
 } from '@/lib/auth';
 
 /**
- * POST /api/auth/login — multi-role login.
+ * POST /api/auth/login — multi-role login with rate limiting.
  *
  * Body: { username, password }
- * Returns: { success, user: { username, role, display_name }, message }
+ * Returns: { success, user: { username, roles, display_name }, message }
  * Sets cookie: gia_session (httpOnly, secure in prod, sameSite=lax, 12h).
  *
- * NOTE: /admin's legacy PIN-based login (/api/auth/login with { password }) is
- * still supported for backward-compat until Phase 3 completes. After Phase 3,
- * only username + password login will be accepted.
+ * Rate limit: 3 failed attempts per (IP + username) within 5 minutes
+ * triggers a 1-minute lockout. Counter resets on successful login.
  */
 export async function POST(req: NextRequest) {
+  // Extract IP for rate limiting (Vercel provides x-forwarded-for)
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+
   let body: { username?: unknown; password?: unknown };
   try {
     body = await req.json();
@@ -35,30 +44,65 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Rate limit check (per IP + username to prevent both brute force
+  // on single account AND multi-account abuse from one IP)
+  const rateKey = `${ip}::${username.toLowerCase()}`;
+  const rateCheck = checkLoginRateLimit(rateKey);
+  if (!rateCheck.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Terlalu banyak percobaan login gagal. Coba lagi dalam ${rateCheck.retryAfterSec} detik.`,
+        retryAfter: rateCheck.retryAfterSec,
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateCheck.retryAfterSec) },
+      },
+    );
+  }
+
   const result = await login(username, password);
   if (!result) {
+    const failure = recordLoginFailure(rateKey);
+    if (failure.locked) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Terlalu banyak percobaan gagal. Akun dikunci sementara selama ${failure.retryAfterSec} detik.`,
+          retryAfter: failure.retryAfterSec,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(failure.retryAfterSec) },
+        },
+      );
+    }
     return NextResponse.json(
       { success: false, error: 'Username atau password salah' },
       { status: 401 },
     );
   }
 
+  // Successful login — clear any prior failures for this key
+  clearLoginFailures(rateKey);
+
   const { user, token } = result;
   const res = NextResponse.json({
     success: true,
     message: `Login berhasil. Selamat datang, ${user.display_name || user.username}!`,
-    user: { username: user.username, role: user.role, display_name: user.display_name },
+    user: { username: user.username, roles: user.roles, display_name: user.display_name },
   });
   setSessionCookie(res, token);
   return res;
 }
 
 /**
- * POST /api/auth/logout — clears the session cookie.
+ * DELETE /api/auth/login — clears the session cookie (logout).
  */
 export async function DELETE() {
   const res = NextResponse.json({ success: true });
-  res.cookies.set(SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0 });
+  clearSessionCookie(res);
   return res;
 }
 

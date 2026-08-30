@@ -27,7 +27,7 @@ type Role = 'super' | 'admin' | 'treasurer';
 interface User {
   id: string;
   username: string;
-  role: Role;
+  roles: Role[];
   display_name: string | null;
   active: boolean;
   last_login_at: string | null;
@@ -37,7 +37,7 @@ interface User {
 interface AuthUser {
   id: string;
   username: string;
-  role: Role;
+  roles: Role[];
   display_name: string | null;
 }
 
@@ -79,9 +79,9 @@ export default function SuperPage() {
   const [form, setForm] = useState<{
     username: string;
     password: string;
-    role: Role;
+    roles: Role[];
     display_name: string;
-  }>({ username: '', password: '', role: 'admin', display_name: '' });
+  }>({ username: '', password: '', roles: ['admin'], display_name: '' });
 
   // Check auth on mount
   useEffect(() => {
@@ -157,13 +157,13 @@ export default function SuperPage() {
 
   const openCreateModal = () => {
     setEditingId(null);
-    setForm({ username: '', password: '', role: 'admin', display_name: '' });
+    setForm({ username: '', password: '', roles: ['admin'], display_name: '' });
     setIsModalOpen(true);
   };
 
   const openEditModal = (u: User) => {
     setEditingId(u.id);
-    setForm({ username: u.username, password: '', role: u.role, display_name: u.display_name || '' });
+    setForm({ username: u.username, password: '', roles: u.roles, display_name: u.display_name || '' });
     setIsModalOpen(true);
   };
 
@@ -173,7 +173,7 @@ export default function SuperPage() {
       if (editingId) {
         // PATCH
         const patch: Record<string, unknown> = {
-          role: form.role,
+          roles: form.roles,
           display_name: form.display_name.trim() || null,
           active: true,
         };
@@ -197,7 +197,7 @@ export default function SuperPage() {
           body: JSON.stringify({
             username: form.username.trim(),
             password: form.password,
-            role: form.role,
+            roles: form.roles,
             display_name: form.display_name.trim() || null,
           }),
         });
@@ -402,7 +402,7 @@ export default function SuperPage() {
           </span>
           {' '}
           <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">
-            ({authUser?.role})
+            ({authUser?.roles?.join(', ') || authUser?.username})
           </span>
         </div>
 
@@ -447,7 +447,9 @@ export default function SuperPage() {
                 </tr>
               ) : (
                 users.map((u) => {
-                  const meta = ROLE_META[u.role];
+                  // primary role for badge color (use first role in array)
+                  const primaryRole = (u.roles && u.roles[0]) || 'admin';
+                  const meta = ROLE_META[primaryRole];
                   return (
                     <tr
                       key={u.id}
@@ -611,20 +613,52 @@ export default function SuperPage() {
                 </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  Role *
+                  Role * <span className="text-[10px] normal-case opacity-60">(pilih 1 atau lebih)</span>
                 </label>
-                <select
-                  required
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
-                >
-                  <option value="super">🔑 Superuser — akses penuh ke /super</option>
-                  <option value="admin">📋 Admin/Operator — akses ke /admin</option>
-                  <option value="treasurer">💰 Bendahara Youth — akses ke /kas</option>
-                </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {(['super', 'admin', 'treasurer'] as Role[]).map((r) => {
+                    const isChecked = form.roles.includes(r);
+                    return (
+                      <label
+                        key={r}
+                        className={`flex items-start gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
+                          isChecked
+                            ? 'border-[#C5222E] bg-[#FDF0F0] dark:bg-[#331418]'
+                            : 'border-[#EBDDCF] dark:border-[#3A1C20] bg-[#F7F2E8] dark:bg-[#2A161A] hover:border-[#C5222E]/40'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? Array.from(new Set([...form.roles, r]))
+                              : form.roles.filter((x) => x !== r);
+                            setForm({ ...form, roles: next });
+                          }}
+                          className="mt-0.5 rounded text-[#C5222E] focus:ring-[#C5222E]"
+                        />
+                        <div className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] leading-tight">
+                          {r === 'super' && '🔑 Superuser'}
+                          {r === 'admin' && '📋 Admin/Operator'}
+                          {r === 'treasurer' && '💰 Bendahara'}
+                          <div className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3] font-normal mt-0.5">
+                            {r === 'super' && 'Akses penuh ke semua portal'}
+                            {r === 'admin' && 'Akses ke /admin'}
+                            {r === 'treasurer' && 'Akses ke /kas'}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+                {form.roles.length === 0 && (
+                  <p className="text-[10px] text-[#9A1620] dark:text-[#F2828C] font-bold">
+                    ⚠️ Pilih minimal 1 role
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">

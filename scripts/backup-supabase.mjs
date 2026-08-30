@@ -9,11 +9,13 @@
  *
  * Output: backups/YYYYMMDDHHMMSS.json
  *
- * Skema Supabase project saat ini (4 tabel):
+ * Skema Supabase project saat ini (6 tabel):
  *   - announcements
  *   - gallery_items
  *   - sermons
  *   - ministry_requests
+ *   - servant_rosters
+ *   - inventory_items
  *
  * Tabel lain yang tercantum di DEFAULT_TABLES tapi belum dibuat di Supabase
  * akan di-skip dengan warning (HTTP 404). Workflow exit 0 selama minimal
@@ -31,13 +33,14 @@ const DEFAULT_TABLES = [
   'gallery_items',
   'sermons',
   'ministry_requests',
+  'servant_rosters',
+  'inventory_items',
   // Planned tables (belum dibuat — akan di-skip jika 404)
   'profiles',
   'events',
   'bible_study_registrations',
   'small_groups',
   'small_group_members',
-  'inventory',
 ];
 
 const TABLES = process.env.BACKUP_TABLES

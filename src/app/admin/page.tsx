@@ -65,7 +65,7 @@ type Role = 'super' | 'admin' | 'treasurer';
 interface AuthUser {
   id: string;
   username: string;
-  role: Role;
+  roles: Role[];
   display_name: string | null;
 }
 
@@ -81,7 +81,7 @@ function useCurrentUser() {
     fetch('/api/auth/check')
       .then((r) => r.json())
       .then((d) => {
-        if (d.authenticated && (d.user?.role === 'super' || d.user?.role === 'admin')) {
+        if (d.authenticated && d.user?.roles?.some((r: string) => r === 'super' || r === 'admin')) {
           setUser(d.user);
         }
         setAuthChecked(true);

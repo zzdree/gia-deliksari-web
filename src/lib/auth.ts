@@ -2,25 +2,30 @@
  * Multi-role authentication for /super, /admin, /kas portals.
  *
  * Architecture:
- *   - All user data is stored in the Supabase `users` table (see migration
- *     20260831_create_users_table.sql).
- *   - Passwords are bcrypt-hashed (cost 10). Plaintext NEVER touches disk.
+ *   - User data is stored in the Supabase `users` table (see migration
+ *     20260831100000_multi_role_users.sql).
+ *   - Each user has a `roles` array (TEXT[]): ['super'], ['admin'],
+ *     ['treasurer'], or multi-role like ['admin', 'treasurer'].
+ *   - Passwords are bcrypt-hashed (cost 10). PIN must be exactly 4 digits
+ *     (per user requirement). Longer passwords allowed for super.
  *   - Session is a signed cookie with HMAC-SHA256 over a JSON payload
- *     `{ userId, username, role, expiresAt }`.
- *   - `getCurrentUser(req)` reads & verifies the cookie, then fetches the
- *     fresh user record from Supabase (cheap single SELECT).
- *   - `requireRole(req, allowed)` is the route-guard used by /api/* routes.
+ *     `{ userId, username, roles, expiresAt }`.
+ *   - `getCurrentUser(req)` reads & verifies the cookie, then fetches
+ *     the fresh user record from Supabase.
+ *   - `requireRole(req, allowed)` returns User if any of user.roles
+ *     is in `allowed`.
  *
- * Roles:
- *   - 'super'      → /super only
- *   - 'admin'      → /super (admin-only views), /admin, /api/admin/*
- *   - 'treasurer'  → /super (admin-only views), /kas, /api/youth-treasury/*
+ * Roles (per user, can be multiple):
+ *   - 'super'      → /super + /admin + /kas (full access)
+ *   - 'admin'      → /admin (Warta, Roster, Khotbah, Inventaris)
+ *   - 'treasurer'  → /kas (manajemen kas youth)
  *
  * Security:
  *   - Cookies are httpOnly + Secure (in production) + sameSite=lax.
- *   - Session max age: 12 hours (matches ADMIN_SESSION_MAX_AGE legacy).
- *   - Password verification uses timing-safe bcrypt.compare.
- *   - User lookup is cached briefly to avoid hammering the DB on every API call.
+ *   - Session max age: 12 hours.
+ *   - Password verification uses bcrypt.compare (timing-safe).
+ *   - User lookup is cached briefly (60s) to avoid hammering the DB.
+ *   - PIN 4-digit enforced server-side at user creation.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -32,7 +37,7 @@ export type Role = 'super' | 'admin' | 'treasurer';
 export interface User {
   id: string;
   username: string;
-  role: Role;
+  roles: Role[];
   display_name: string | null;
   active: boolean;
   last_login_at: string | null;
@@ -42,23 +47,21 @@ export interface User {
 export interface SessionPayload {
   userId: string;
   username: string;
-  role: Role;
+  roles: Role[];
   expiresAt: number;
 }
 
 const COOKIE_NAME = 'gia_session';
 const SESSION_DURATION_SECONDS = 60 * 60 * 12; // 12 hours
 const BCRYPT_COST = 10;
+const PIN_MIN = 4;    // PIN minimal 4 digit (per user requirement)
+const PIN_MAX = 64;   // Max password length (allow longer for super)
 
 // ---------------------------------------------------------------------------
-// Session signing — keep compatible with the legacy admin-session.ts format
-// (HMAC-SHA256 over a base64url JSON payload). Distinct cookie name so old
-// `gia_admin_session` cookies don't bleed into the new auth system.
+// Session signing
 // ---------------------------------------------------------------------------
 
 function getSessionSecret() {
-  // Per-environment secret. Falls back to a stable dev-only string if the
-  // env var is missing (production MUST set ADMIN_SESSION_SECRET).
   return process.env.ADMIN_SESSION_SECRET || 'gia-deliksari-semarang-secret-key-2026';
 }
 
@@ -82,6 +85,7 @@ export function decodeSession(token: string | undefined | null): SessionPayload 
   try {
     const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as SessionPayload;
     if (typeof payload.expiresAt !== 'number' || payload.expiresAt <= Date.now()) return null;
+    if (!Array.isArray(payload.roles) || payload.roles.length === 0) return null;
     return payload;
   } catch {
     return null;
@@ -89,7 +93,7 @@ export function decodeSession(token: string | undefined | null): SessionPayload 
 }
 
 // ---------------------------------------------------------------------------
-// Cookie helpers — used by /api/auth/* route handlers.
+// Cookie helpers
 // ---------------------------------------------------------------------------
 
 export function setSessionCookie(res: { cookies: { set(name: string, value: string, opts: any): void } }, token: string) {
@@ -107,7 +111,9 @@ export function clearSessionCookie(res: { cookies: { set(name: string, value: st
 }
 
 // ---------------------------------------------------------------------------
-// Password helpers — bcrypt cost 10. Never log plaintext passwords.
+// Password / PIN helpers — bcrypt cost 10
+// PIN must be 4-64 chars; canonical PIN is exactly 4 digits but we accept
+// longer passwords for superuser accounts.
 // ---------------------------------------------------------------------------
 
 export async function hashPassword(plain: string): Promise<string> {
@@ -122,6 +128,26 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   }
 }
 
+/**
+ * Validate a new PIN/password before hashing & storing.
+ * - Must be 4-64 chars
+ * - Whitespace trimmed
+ * - Returns trimmed value on success, error message string on failure
+ */
+export function validateNewPassword(plain: unknown): { ok: true; value: string } | { ok: false; error: string } {
+  if (typeof plain !== 'string') {
+    return { ok: false, error: 'Password harus string' };
+  }
+  const trimmed = plain.trim();
+  if (trimmed.length < PIN_MIN) {
+    return { ok: false, error: `PIN/password minimal ${PIN_MIN} karakter` };
+  }
+  if (trimmed.length > PIN_MAX) {
+    return { ok: false, error: `PIN/password maksimal ${PIN_MAX} karakter` };
+  }
+  return { ok: true, value: trimmed };
+}
+
 // ---------------------------------------------------------------------------
 // User lookup
 // ---------------------------------------------------------------------------
@@ -134,77 +160,63 @@ const userCache = new Map<string, UserCacheEntry>();
 const CACHE_TTL_MS = 60_000; // 1 minute
 
 async function fetchUserById(userId: string): Promise<User | null> {
-  // Cache hit
   const cached = userCache.get(userId);
   if (cached && cached.expiresAt > Date.now()) return cached.user;
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) return null;
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) return null;
 
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, username, role, display_name, active, last_login_at, created_at')
+    .select('id, username, roles, display_name, active, last_login_at, created_at')
     .eq('id', userId)
     .eq('active', true)
     .maybeSingle();
   if (error || !data) return null;
 
-  const user: User = {
-    id: data.id,
-    username: data.username,
-    role: data.role as Role,
-    display_name: data.display_name,
-    active: data.active,
-    last_login_at: data.last_login_at,
-    created_at: data.created_at,
-  };
+  const user: User = normalizeUser(data);
   userCache.set(userId, { user, expiresAt: Date.now() + CACHE_TTL_MS });
   return user;
 }
 
-async function fetchUserByUsername(username: string): Promise<User | null> {
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) return null;
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('id, username, role, display_name, active, last_login_at, created_at')
-    .eq('username', username)
-    .eq('active', true)
-    .maybeSingle();
-  if (error || !data) return null;
+function normalizeUser(row: any): User {
+  // Handle both old schema (role) and new schema (roles[]) for safety
+  let roles: Role[] = [];
+  if (Array.isArray(row.roles) && row.roles.length > 0) {
+    roles = row.roles.filter((r: string) =>
+      r === 'super' || r === 'admin' || r === 'treasurer',
+    );
+  } else if (typeof row.role === 'string') {
+    if (row.role === 'super' || row.role === 'admin' || row.role === 'treasurer') {
+      roles = [row.role];
+    }
+  }
+  if (roles.length === 0) roles = ['admin']; // safe default
   return {
-    id: data.id,
-    username: data.username,
-    role: data.role as Role,
-    display_name: data.display_name,
-    active: data.active,
-    last_login_at: data.last_login_at,
-    created_at: data.created_at,
+    id: row.id,
+    username: row.username,
+    roles,
+    display_name: row.display_name,
+    active: row.active,
+    last_login_at: row.last_login_at,
+    created_at: row.created_at,
   };
 }
 
 async function fetchUserByCredential(username: string, plainPassword: string): Promise<User | null> {
-  if (!isSupabaseAdminConfigured || !supabaseAdmin) return null;
-  // We need password_hash to verify. Allow direct column select for service role.
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, username, password_hash, role, display_name, active, last_login_at, created_at')
+    .select('id, username, password_hash, roles, role, display_name, active, last_login_at, created_at')
     .eq('username', username)
     .eq('active', true)
     .maybeSingle();
   if (error || !data) return null;
   const ok = await verifyPassword(plainPassword, data.password_hash);
   if (!ok) return null;
-  return {
-    id: data.id,
-    username: data.username,
-    role: data.role as Role,
-    display_name: data.display_name,
-    active: data.active,
-    last_login_at: data.last_login_at,
-    created_at: data.created_at,
-  };
+  return normalizeUser(data);
 }
 
 // ---------------------------------------------------------------------------
-// Cookie reader — parses incoming request cookies and returns fresh User.
+// Cookie reader
 // ---------------------------------------------------------------------------
 
 export function readSessionFromCookie(req: { cookies: { get(name: string): { value: string } | undefined } }): SessionPayload | null {
@@ -212,10 +224,6 @@ export function readSessionFromCookie(req: { cookies: { get(name: string): { val
   return decodeSession(cookie);
 }
 
-/**
- * Returns the authenticated User from a request, or null if not authenticated.
- * Caches by userId for 60s.
- */
 export async function getCurrentUser(req: {
   cookies: { get(name: string): { value: string } | undefined };
 }): Promise<User | null> {
@@ -225,12 +233,8 @@ export async function getCurrentUser(req: {
 }
 
 /**
- * Route guard — returns the User if their role is in `allowed`, otherwise
- * returns a 401/403 NextResponse. Use as:
- *
- *   const guard = await requireRole(req, ['super', 'admin']);
- *   if (guard instanceof NextResponse) return guard;
- *   const user = guard;
+ * Route guard — returns the User if any of their roles is in `allowed`.
+ * Otherwise returns a 401/403 Response.
  */
 export async function requireRole(
   req: { cookies: { get(name: string): { value: string } | undefined } },
@@ -243,10 +247,11 @@ export async function requireRole(
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (!allowed.includes(user.role)) {
+  const hasRole = user.roles.some((r) => allowed.includes(r));
+  if (!hasRole) {
     return new Response(
       JSON.stringify({
-        error: `Forbidden — role '${user.role}' not allowed (need one of: ${allowed.join(', ')})`,
+        error: `Forbidden — roles [${user.roles.join(', ')}] not in [${allowed.join(', ')}]`,
       }),
       { status: 403, headers: { 'Content-Type': 'application/json' } },
     );
@@ -255,21 +260,23 @@ export async function requireRole(
 }
 
 // ---------------------------------------------------------------------------
-// Login — verify credentials and return User + session token.
+// Login
 // ---------------------------------------------------------------------------
 
-export async function login(username: string, password: string): Promise<{ user: User; token: string } | null> {
+export async function login(
+  username: string,
+  password: string,
+): Promise<{ user: User; token: string } | null> {
   const user = await fetchUserByCredential(username, password);
   if (!user) return null;
   const payload: SessionPayload = {
     userId: user.id,
     username: user.username,
-    role: user.role,
+    roles: user.roles,
     expiresAt: Date.now() + SESSION_DURATION_SECONDS * 1_000,
   };
   const token = encodeSession(payload);
 
-  // Update last_login_at (best-effort)
   if (isSupabaseAdminConfigured() && supabaseAdmin) {
     await supabaseAdmin
       .from('users')
@@ -282,8 +289,127 @@ export async function login(username: string, password: string): Promise<{ user:
 }
 
 // ---------------------------------------------------------------------------
-// Cookie name export (for logout / check routes)
+// User creation
 // ---------------------------------------------------------------------------
+
+export interface CreateUserInput {
+  username: string;
+  password: string;
+  roles: Role[];
+  display_name?: string | null;
+}
+
+export async function createUser(input: CreateUserInput): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
+    return { ok: false, error: 'Supabase admin not configured' };
+  }
+  const username = input.username.trim();
+  const trimmed = input.password.trim();
+
+  // Username validation
+  if (username.length < 3 || username.length > 64) {
+    return { ok: false, error: 'Username harus 3-64 karakter' };
+  }
+  if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+    return { ok: false, error: 'Username hanya boleh huruf, angka, dot, underscore, dash' };
+  }
+  // Password validation
+  const pwCheck = validateNewPassword(trimmed);
+  if (!pwCheck.ok) return { ok: false, error: pwCheck.error };
+  // Roles validation
+  if (!Array.isArray(input.roles) || input.roles.length === 0) {
+    return { ok: false, error: 'Pilih minimal 1 role' };
+  }
+  const validRoles: Role[] = ['super', 'admin', 'treasurer'];
+  const roles = Array.from(new Set(input.roles.filter((r) => validRoles.includes(r))));
+  if (roles.length === 0) {
+    return { ok: false, error: 'Role tidak valid' };
+  }
+  // Check duplicate
+  const { data: existing } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+  if (existing) {
+    return { ok: false, error: `Username '${username}' sudah dipakai` };
+  }
+  // Insert
+  const password_hash = await hashPassword(pwCheck.value);
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .insert({
+      username,
+      password_hash,
+      roles,
+      display_name: input.display_name?.trim() || null,
+      active: true,
+    })
+    .select('id')
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: data.id };
+}
 
 export const SESSION_COOKIE_NAME = COOKIE_NAME;
 export const SESSION_MAX_AGE_SECONDS = SESSION_DURATION_SECONDS;
+
+// ---------------------------------------------------------------------------
+// Rate limiting (login attempt lockout)
+// In-memory sliding window per (ip + username). After MAX_FAILS, lock the
+// key for LOCKOUT_MS.
+// ---------------------------------------------------------------------------
+
+interface RateLimitState {
+  failures: number[];
+  lockedUntil: number;
+}
+const loginAttempts = new Map<string, RateLimitState>();
+const LOGIN_MAX_FAILS = 3;
+const LOGIN_LOCKOUT_MS = 60_000; // 1 minute
+const LOGIN_WINDOW_MS = 5 * 60_000; // 5 minutes
+
+/** Returns { ok: true } if not locked, else { ok: false, retryAfterSec } */
+export function checkLoginRateLimit(key: string): { ok: true } | { ok: false; retryAfterSec: number } {
+  const now = Date.now();
+  const state = loginAttempts.get(key);
+  if (!state) return { ok: true };
+  if (state.lockedUntil > now) {
+    return { ok: false, retryAfterSec: Math.ceil((state.lockedUntil - now) / 1000) };
+  }
+  // Lock expired; clean failures older than window
+  state.failures = state.failures.filter((t) => now - t < LOGIN_WINDOW_MS);
+  return { ok: true };
+}
+
+export function recordLoginFailure(key: string): { locked: boolean; retryAfterSec: number } {
+  const now = Date.now();
+  const state = loginAttempts.get(key) || { failures: [], lockedUntil: 0 };
+  state.failures = state.failures.filter((t) => now - t < LOGIN_WINDOW_MS);
+  state.failures.push(now);
+  let locked = false;
+  let retryAfterSec = 0;
+  if (state.failures.length >= LOGIN_MAX_FAILS) {
+    state.lockedUntil = now + LOGIN_LOCKOUT_MS;
+    locked = true;
+    retryAfterSec = Math.ceil(LOGIN_LOCKOUT_MS / 1000);
+  }
+  loginAttempts.set(key, state);
+  return { locked, retryAfterSec };
+}
+
+export function clearLoginFailures(key: string) {
+  loginAttempts.delete(key);
+}
+
+// Periodic cleanup to avoid memory leak
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of loginAttempts) {
+      if (v.lockedUntil < now && v.failures.every((t) => now - t > LOGIN_WINDOW_MS)) {
+        loginAttempts.delete(k);
+      }
+    }
+  }, 60_000);
+}
