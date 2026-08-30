@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE, hasValidAdminSession } from '@/lib/admin-session';
+import { getCurrentUser } from '@/lib/auth';
 
+/**
+ * GET /api/auth/check — returns current authenticated user (or null).
+ *
+ * Used by /admin, /super, /kas to decide whether to render the login screen
+ * or the dashboard.
+ */
 export async function GET(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  const isAuthenticated = hasValidAdminSession(session);
-  return NextResponse.json({ authenticated: isAuthenticated });
+  const user = await getCurrentUser(req);
+  if (!user) {
+    return NextResponse.json({ authenticated: false }, { status: 200 });
+  }
+  return NextResponse.json({
+    authenticated: true,
+    user: {
+      username: user.username,
+      role: user.role,
+      display_name: user.display_name,
+    },
+  });
 }

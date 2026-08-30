@@ -235,10 +235,22 @@ export async function getCurrentUser(req: {
 export async function requireRole(
   req: { cookies: { get(name: string): { value: string } | undefined } },
   allowed: Role[],
-): Promise<User | { status: number; error: string }> {
+): Promise<User | Response> {
   const user = await getCurrentUser(req);
-  if (!user) return { status: 401, error: 'Unauthorized' };
-  if (!allowed.includes(user.role)) return { status: 403, error: `Forbidden — role '${user.role}' not in [${allowed.join(', ')}]` };
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  if (!allowed.includes(user.role)) {
+    return new Response(
+      JSON.stringify({
+        error: `Forbidden — role '${user.role}' not allowed (need one of: ${allowed.join(', ')})`,
+      }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
   return user;
 }
 
