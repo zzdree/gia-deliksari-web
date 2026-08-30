@@ -7,6 +7,7 @@ import MinistriesSection from '@/components/MinistriesSection';
 import SermonsSection from '@/components/SermonsSection';
 import AnnouncementBoard from '@/components/AnnouncementBoard';
 import ScheduleSection from '@/components/ScheduleSection';
+import OrganizationSection from '@/components/OrganizationSection';
 import MinistryRegistrationSection from '@/components/MinistryRegistrationSection';
 import GivingSection from '@/components/GivingSection';
 import GallerySection from '@/components/GallerySection';
@@ -28,6 +29,7 @@ export default function Home() {
         <SermonsSection />
         <AnnouncementBoard />
         <ScheduleSection />
+        <OrganizationSection />
         <MinistryRegistrationSection />
         <GivingSection />
         <GallerySection />

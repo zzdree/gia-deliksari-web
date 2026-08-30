@@ -25,6 +25,7 @@ export default function Navbar() {
     { name: 'Khotbah', href: '#khotbah' },
     { name: 'Warta', href: '#warta' },
     { name: 'Jadwal', href: '#jadwal' },
+    { name: 'Tim', href: '#struktur' },
     { name: 'Layanan', href: '#layanan' },
     { name: 'Persembahan', href: '#persembahan' },
     { name: 'Galeri', href: '#galeri' },
