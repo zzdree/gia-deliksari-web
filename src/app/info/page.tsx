@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { dataStore } from '@/lib/storage';
 import PrintBulletin from '@/components/PrintBulletin';
+import RosterCalendar from '@/components/RosterCalendar';
 import { INITIAL_ANNOUNCEMENTS, INITIAL_ROSTER } from '@/lib/seedData';
 import { Announcement, ServantRoster, MinistryCategory } from '@/types';
 
@@ -118,6 +119,7 @@ export default function InfoPage() {
   const [annCategory, setAnnCategory] = useState<MinistryCategory>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [rosterCat, setRosterCat] = useState<'all' | 'general' | 'youth' | 'kidz' | 'hana'>('all');
+  const [rosterView, setRosterView] = useState<'list' | 'calendar'>('list');
 
   useEffect(() => {
     const loadData = async () => {
@@ -375,7 +377,30 @@ export default function InfoPage() {
           </div>
 
           {/* Roster Category Filter */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 bg-[#F7F2E8] dark:bg-[#221215] p-1 rounded-xl border border-[#EBDDCF] dark:border-[#3A1C20] mr-2">
+              <button
+                onClick={() => setRosterView('list')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  rosterView === 'list'
+                    ? 'bg-white dark:bg-[#2A161A] text-[#1F1617] dark:text-white shadow-xs'
+                    : 'text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#1F1617]'
+                }`}
+              >
+                📋 List
+              </button>
+              <button
+                onClick={() => setRosterView('calendar')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  rosterView === 'calendar'
+                    ? 'bg-white dark:bg-[#2A161A] text-[#1F1617] dark:text-white shadow-xs'
+                    : 'text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#1F1617]'
+                }`}
+              >
+                📅 Kalender
+              </button>
+            </div>
             {[
               { id: 'all', label: 'Semua Komunitas' },
               { id: 'general', label: '1. Ibadah Raya' },
@@ -397,68 +422,74 @@ export default function InfoPage() {
             ))}
           </div>
 
-          {/* Roster Table */}
-          <div className="overflow-x-auto rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
-            {filteredRoster.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                Belum ada jadwal petugas pelayanan untuk kategori ini.
-              </div>
-            ) : (
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
-                  <tr>
-                    <th className="p-4 font-bold">Kategori</th>
-                    <th className="p-4 font-bold">Tanggal</th>
-                    <th className="p-4 font-bold">Tugas / Peran</th>
-                    <th className="p-4 font-bold">Nama Pelayan</th>
-                    <th className="p-4 font-bold">Catatan</th>
-                    <th className="p-4 font-bold text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EBDDCF]/60 dark:divide-[#3A1C20]/60">
-                  {filteredRoster.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-[#FDFBF7] dark:hover:bg-[#2A161A] transition-colors"
-                    >
-                      <td className="p-4">
-                        <RosterCategoryLabel category={item.serviceCategory} />
-                      </td>
-                      <td className="p-4 text-[#5A4D4E] dark:text-[#D5C2C4] font-mono">
-                        {item.serviceDate}
-                      </td>
-                      <td className="p-4 font-semibold text-[#C5222E] dark:text-[#E03643]">
-                        {item.role}
-                      </td>
-                      <td className="p-4 text-[#1F1617] dark:text-[#F5EFEB] font-medium">
-                        {item.servantName}
-                      </td>
-                      <td className="p-4 text-xs text-[#5A4D4E] dark:text-[#D5C2C4] max-w-xs">
-                        {item.notes || <span className="italic opacity-60">—</span>}
-                      </td>
-                      <td className="p-4 text-right">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            item.status === 'confirmed'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
-                              : item.status === 'replacement'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/40 dark:text-slate-300 dark:border-slate-800/60'
-                          }`}
-                        >
-                          {item.status === 'confirmed'
-                            ? 'Siap Melayani'
-                            : item.status === 'replacement'
-                              ? 'Pengganti'
-                              : 'Menunggu'}
-                        </span>
-                      </td>
+          {/* Roster View: List | Calendar */}
+          {rosterView === 'calendar' ? (
+            <div className="p-6 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
+              <RosterCalendar rosters={filteredRoster} filterCategory={rosterCat} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
+              {filteredRoster.length === 0 ? (
+                <div className="py-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
+                  Belum ada jadwal petugas pelayanan untuk kategori ini.
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
+                    <tr>
+                      <th className="p-4 font-bold">Kategori</th>
+                      <th className="p-4 font-bold">Tanggal</th>
+                      <th className="p-4 font-bold">Tugas / Peran</th>
+                      <th className="p-4 font-bold">Nama Pelayan</th>
+                      <th className="p-4 font-bold">Catatan</th>
+                      <th className="p-4 font-bold text-right">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-[#EBDDCF]/60 dark:divide-[#3A1C20]/60">
+                    {filteredRoster.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-[#FDFBF7] dark:hover:bg-[#2A161A] transition-colors"
+                      >
+                        <td className="p-4">
+                          <RosterCategoryLabel category={item.serviceCategory} />
+                        </td>
+                        <td className="p-4 text-[#5A4D4E] dark:text-[#D5C2C4] font-mono">
+                          {item.serviceDate}
+                        </td>
+                        <td className="p-4 font-semibold text-[#C5222E] dark:text-[#E03643]">
+                          {item.role}
+                        </td>
+                        <td className="p-4 text-[#1F1617] dark:text-[#F5EFEB] font-medium">
+                          {item.servantName}
+                        </td>
+                        <td className="p-4 text-xs text-[#5A4D4E] dark:text-[#D5C2C4] max-w-xs">
+                          {item.notes || <span className="italic opacity-60">—</span>}
+                        </td>
+                        <td className="p-4 text-right">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              item.status === 'confirmed'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                                : item.status === 'replacement'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/40 dark:text-slate-300 dark:border-slate-800/60'
+                            }`}
+                          >
+                            {item.status === 'confirmed'
+                              ? 'Siap Melayani'
+                              : item.status === 'replacement'
+                                ? 'Pengganti'
+                                : 'Menunggu'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
