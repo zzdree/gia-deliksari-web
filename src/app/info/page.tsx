@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import MiniCountdown from '@/components/info/MiniCountdown';
+import CategoryBadge from '@/components/info/CategoryBadge';
+import RosterCategoryLabel from '@/components/info/RosterCategoryLabel';
 import {
   Bell,
   Calendar,
@@ -41,75 +44,6 @@ function todayStart(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-function MiniCountdown({ targetDate }: { targetDate: string }) {
-  const compute = () => {
-    const target = new Date(`${targetDate}T00:00:00`).getTime();
-    const now = Date.now();
-    const diff = target - now;
-    if (diff <= 0) return null;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    return { days, hours, minutes };
-  };
-  const [cd, setCd] = useState(compute);
-  useEffect(() => {
-    setCd(compute());
-    const id = setInterval(() => setCd(compute()), 60_000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetDate]);
-  if (!cd) return null;
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#FEF9EC] dark:bg-[#332612] text-[#B87A14] dark:text-[#F0BE5E] text-[11px] font-bold border border-[#F8E3B5] dark:border-[#543E19]">
-      <Hourglass className="w-3 h-3" />
-      {cd.days > 0 ? `${cd.days} hari ` : ''}
-      {cd.hours}j {cd.minutes}m lagi
-    </span>
-  );
-}
-
-function CategoryBadge({ category }: { category: MinistryCategory }) {
-  const config: Record<MinistryCategory, { label: string; color: string }> = {
-    general: {
-      label: 'Ibadah Raya',
-      color: 'bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border-[#F5CDD0] dark:border-[#521E25]',
-    },
-    youth: {
-      label: 'Grow Youth',
-      color: 'bg-[#FFF2EE] dark:bg-[#331812] text-[#C83E20] dark:text-[#F88B72] border-[#FCD2C7] dark:border-[#57241A]',
-    },
-    kidz: {
-      label: 'COC Kidz',
-      color: 'bg-[#FEF9EC] dark:bg-[#332612] text-[#B87A14] dark:text-[#F0BE5E] border-[#F8E3B5] dark:border-[#543E19]',
-    },
-    hana: {
-      label: 'Wanita Hana',
-      color: 'bg-[#FDF0F4] dark:bg-[#33121E] text-[#A6264A] dark:text-[#EA7FA0] border-[#F7C6D5] dark:border-[#541D30]',
-    },
-    all: {
-      label: 'Umum',
-      color: 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] border-[#EBDDCF] dark:border-[#3A1C20]',
-    },
-  };
-  const c = config[category];
-  return (
-    <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${c.color}`}>
-      {c.label}
-    </span>
-  );
-}
-
-function RosterCategoryLabel({ category }: { category: 'general' | 'youth' | 'kidz' | 'hana' }) {
-  const labels = {
-    general: 'Ibadah Raya',
-    youth: 'Grow Youth',
-    kidz: 'COC Kidz',
-    hana: 'Wanita Hana',
-  };
-  return <span className="font-bold text-[#1F1617] dark:text-[#F5EFEB]">{labels[category]}</span>;
 }
 
 export default function InfoPage() {
