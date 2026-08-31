@@ -21,6 +21,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { dataStore } from '@/lib/storage';
+import PrintBulletin from '@/components/PrintBulletin';
 import { INITIAL_ANNOUNCEMENTS, INITIAL_ROSTER } from '@/lib/seedData';
 import { Announcement, ServantRoster, MinistryCategory } from '@/types';
 
@@ -179,6 +180,47 @@ export default function InfoPage() {
             petugas gereja GIA Deliksari Semarang. Dikontrol langsung oleh
             pengurus gereja melalui Portal Admin.
           </p>
+          <div className="mt-6">
+            <button
+              onClick={() => {
+                const weekRange = (() => {
+                  const today = new Date();
+                  const startOfWeek = new Date(today);
+                  startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+                  const endOfWeek = new Date(startOfWeek);
+                  endOfWeek.setDate(startOfWeek.getDate() + 6);
+                  const fmt = (d: Date) =>
+                    d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                  return `${fmt(startOfWeek)} – ${fmt(endOfWeek)}`;
+                })();
+                const w = window.open('', 'gia-bulletin', 'width=900,height=1200,scrollbars=yes');
+                if (!w) {
+                  alert('Popup diblokir oleh browser. Izinkan popup untuk situs ini lalu coba lagi.');
+                  return;
+                }
+                // Render Bulletin into popup window
+                import('react-dom/client').then(({ createRoot }) => {
+                  import('react').then((React) => {
+                    const root = createRoot(w.document.body);
+                    root.render(
+                      React.createElement(PrintBulletin, {
+                        announcements: announcements.filter((a) => a.isPublished !== false),
+                        rosters: roster,
+                        weekLabel: weekRange,
+                      }),
+                    );
+                  });
+                });
+              }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10"
+            >
+              <Printer className="w-4 h-4" />
+              Cetak Bulletin (A4 / PDF)
+            </button>
+            <p className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3] mt-2 max-w-2xl">
+              Buka window print-friendly A4. Pilih "Save as PDF" di dialog print browser untuk simpan sebagai PDF, atau cetak langsung ke printer fisik.
+            </p>
+          </div>
         </div>
       </section>
 
