@@ -53,6 +53,7 @@ for (const key of REQUIRED) {
 
 const BUCKET = process.env.B2_BUCKET_NAME;
 const DRIVE_FOLDER = process.env.GOOGLE_DRIVE_PUBLIC_FOLDER_ID;
+const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === '1';
 
 async function getDriveClient() {
   const { getDriveClient } = await import('../src/lib/googleDrive.ts').catch(() => null) ?? {};
@@ -124,6 +125,22 @@ async function uploadOne(s3, file) {
 async function main() {
   const startedAt = Date.now();
   console.log(`[b2-mirror] starting at ${new Date().toISOString()}`);
+  if (DRY_RUN) {
+    console.log('[b2-mirror] DRY RUN — no uploads, no B2 connections');
+  }
+
+  // In dry-run mode, just list and report what would happen.
+  if (DRY_RUN) {
+    const files = await listDriveFiles();
+    console.log(`[b2-mirror] would scan ${files.length} files in Drive folder`);
+    let totalBytes = 0;
+    for (const f of files) {
+      totalBytes += parseInt(f.size ?? '0', 10);
+      console.log(`  - ${f.name} (${f.size ?? '?'} bytes, modified ${f.modifiedTime})`);
+    }
+    console.log(`[b2-mirror] would upload ~${(totalBytes / 1024 / 1024).toFixed(1)} MB total`);
+    return;
+  }
 
   const s3 = await getS3Client();
   const files = await listDriveFiles();
