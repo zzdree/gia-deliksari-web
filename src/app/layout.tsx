@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import ScrollToTop from '@/components/ScrollToTop';
 
 const inter = Inter({
@@ -205,8 +206,10 @@ export default function RootLayout({
           Lewati ke Konten Utama (Skip to Content)
         </a>
         <ThemeProvider>
-          {children}
-          <ScrollToTop />
+          <ErrorBoundary>
+            {children}
+            <ScrollToTop />
+          </ErrorBoundary>
         </ThemeProvider>
         {/* Service Worker registration — enables offline access & PWA install.
             Strategy: register on load, defer activation via SKIP_WAITING. */}

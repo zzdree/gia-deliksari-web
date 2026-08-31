@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { 
-  Calendar, 
-  MapPin, 
-  ArrowRight, 
-  Heart, 
-  Users, 
+import {
+  Calendar,
+  MapPin,
+  ArrowRight,
+  Heart,
+  Users,
   Sparkles,
   Play
 } from 'lucide-react';
 import { YouTubeIcon } from './Icons';
+import { Button } from '@/components/ui/Button';
 
 export default function Hero() {
   const [timeLeft, setTimeLeft] = useState<{
@@ -102,31 +103,39 @@ export default function Hero() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <a
+              <Button
+                as="link"
                 href="#kunjungan"
-                className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-[#C5222E] via-[#A81722] to-[#80141C] hover:opacity-95 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-md shadow-red-950/20 flex items-center justify-center gap-2.5 transition-all"
+                variant="maroon"
+                size="lg"
+                iconRight={<ArrowRight className="w-4 h-4" />}
+                className="w-full sm:w-auto shadow-red-950/20"
               >
-                <span>Rencanakan Kunjungan & Hadir Onsite</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
+                Rencanakan Kunjungan & Hadir Onsite
+              </Button>
 
-              <a
+              <Button
+                as="link"
                 href="#jadwal"
-                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white dark:bg-[#221215] hover:bg-[#F7F2E8] dark:hover:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] font-bold text-sm sm:text-base border border-[#EBDDCF] dark:border-[#3A1C20] flex items-center justify-center gap-2 shadow-xs transition-all"
+                variant="outline"
+                size="lg"
+                iconLeft={<Calendar className="w-4 h-4" />}
+                className="w-full sm:w-auto"
               >
-                <Calendar className="w-4 h-4 text-[#C5222E] dark:text-[#E03643]" />
-                <span>Lihat Jadwal Ibadah</span>
-              </a>
+                Lihat Jadwal Ibadah
+              </Button>
 
-              <a
+              <Button
+                as="link"
                 href="https://www.youtube.com/@GIADeliksariSemarang"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-5 py-4 rounded-2xl text-xs font-bold text-[#5A4D4E] dark:text-[#D5C2C4] hover:text-[#C5222E] dark:hover:text-[#E03643] flex items-center justify-center gap-2 transition-colors"
+                variant="ghost"
+                size="md"
+                external
+                iconLeft={<YouTubeIcon className="w-4 h-4" />}
+                className="w-full sm:w-auto"
               >
-                <YouTubeIcon className="w-4 h-4 text-[#C5222E]" />
-                <span>Streaming YouTube</span>
-              </a>
+                Streaming YouTube
+              </Button>
             </div>
 
             {/* 3 Quick Micro Stats */}

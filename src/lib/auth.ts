@@ -222,7 +222,10 @@ async function fetchUserByCredential(username: string, plainPassword: string): P
   }
   const ok = await verifyPassword(plainPassword, data.password_hash);
   if (!ok) {
-    console.error('[auth] bcrypt mismatch for', username, 'hash-prefix:', data.password_hash?.slice(0, 7));
+    // NOTE: deliberately NOT logging hash prefix to avoid leaking partial
+    // bcrypt state into Vercel function logs. Caller receives null and
+    // audit_log records the failure with IP + username.
+    console.warn('[auth] bcrypt mismatch for', username);
     return null;
   }
   return normalizeUser(data);

@@ -1,0 +1,80 @@
+name: Lighthouse CI
+
+# Runs Lighthouse against the production deployment on every push to main.
+# Asserts Performance >= 0.9, Accessibility >= 0.95, Best Practices >= 0.95, SEO >= 0.9.
+# Posts results as GitHub Status checks via LHCI_GITHUB_APP_TOKEN (optional).
+#
+# To enable permanent LHCI dashboard storage, add LHCI_TOKEN secret.
+# Without it, reports upload to temporary-public-storage and live 7 days.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: lhci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+
+jobs:
+  lighthouse:
+    name: Lighthouse audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lighthouse CI
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: |
+          npx --yes @lhci/cli@0.14.x autorun \
+            --collect.url=https://gia-deliksari-web.vercel.app \
+            --collect.url=https://gia-deliksari-web.vercel.app/home \
+            --collect.url=https://gia-deliksari-web.vercel.app/info \
+            --collect.settings.preset=desktop \
+            --collect.settings.preset=mobile \
+            --assert.assertions[0].metric=first-contentful-paint \
+            --assert.assertions[0].maxNumericValue=2500 \
+            --assert.assertions[1].metric=largest-contentful-paint \
+            --assert.assertions[1].maxNumericValue=4000 \
+            --assert.assertions[2].metric=cumulative-layout-shift \
+            --assert.assertions[2].maxNumericValue=0.1 \
+            --assert.assertions[3].metric=total-blocking-time \
+            --assert.assertions[3].maxNumericValue=300 \
+            --assert.assertions[4].metric=categories:performance \
+            --assert.assertions[4].minScore=0.9 \
+            --assert.assertions[5].metric=categories:accessibility \
+            --assert.assertions[5].minScore=0.95 \
+            --assert.assertions[6].metric=categories:best-practices \
+            --assert.assertions[6].minScore=0.95 \
+            --assert.assertions[7].metric=categories:seo \
+            --assert.assertions[7].minScore=0.9 \
+            --upload.target=temporary-public-storage \
+            --upload.token=${{ secrets.LHCI_TOKEN }}
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci
+          retention-days: 14
