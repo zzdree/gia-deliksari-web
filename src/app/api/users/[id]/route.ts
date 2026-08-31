@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole, hashPassword, Role } from '@/lib/auth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * PATCH /api/users/[id] — update user (super only).
@@ -67,6 +68,23 @@ export async function PATCH(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Build a structured audit summary of what changed.
+  const changes: Record<string, unknown> = {};
+  if ('roles' in patch) changes.roles = patch.roles;
+  if ('display_name' in patch) changes.display_name = patch.display_name;
+  if ('active' in patch) changes.active = patch.active;
+  if ('password_hash' in patch) changes.password_changed = true; // never log the hash itself
+
+  await logAudit({
+    actor: { id: guard.id, username: guard.username, roles: guard.roles },
+    action: 'user.update',
+    target: { table: 'users', id, label: data?.username },
+    summary: `Update user '${data?.username}' (${Object.keys(changes).join(', ')})`,
+    meta: { changes, target_username: data?.username },
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, user: data });
 }
 
@@ -88,9 +106,18 @@ export async function DELETE(
     .from('users')
     .update({ active: false })
     .eq('id', id)
-    .select('id, active')
+    .select('id, username, active')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAudit({
+    actor: { id: guard.id, username: guard.username, roles: guard.roles },
+    action: 'user.deactivate',
+    target: { table: 'users', id, label: data?.username },
+    summary: `Nonaktifkan user '${data?.username}'`,
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, user: data });
 }

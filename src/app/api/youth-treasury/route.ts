@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole, getCurrentUser } from '@/lib/auth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * GET /api/youth-treasury — list transactions + aggregate balance.
@@ -126,5 +127,15 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAudit({
+    actor: { id: user.id, username: guard.username, roles: guard.roles },
+    action: 'kas.create',
+    target: { table: 'youth_treasury_transactions', id: data.id },
+    summary: `Catat ${type} Rp ${amount.toLocaleString('id-ID')} (${category})`,
+    meta: { type, category, amount, transaction_date, description },
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, transaction: data });
 }

@@ -9,6 +9,7 @@ import {
   recordLoginFailure,
   clearLoginFailures,
 } from '@/lib/auth';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * POST /api/auth/login — multi-role login with rate limiting.
@@ -49,6 +50,13 @@ export async function POST(req: NextRequest) {
   const rateKey = `${ip}::${username.toLowerCase()}`;
   const rateCheck = checkLoginRateLimit(rateKey);
   if (!rateCheck.ok) {
+    await logAudit({
+      actor: null,
+      action: 'auth.login_lockout',
+      target: { label: username },
+      summary: `Login lockout untuk '${username}' dari ${ip}`,
+      ctx: auditContextFromRequest(req),
+    });
     return NextResponse.json(
       {
         success: false,
@@ -65,6 +73,15 @@ export async function POST(req: NextRequest) {
   const result = await login(username, password);
   if (!result) {
     const failure = recordLoginFailure(rateKey);
+    await logAudit({
+      actor: null,
+      action: failure.locked ? 'auth.login_lockout' : 'auth.login_failure',
+      target: { label: username },
+      summary: failure.locked
+        ? `Akun '${username}' dikunci setelah ${failure.retryAfterSec}s dari ${ip}`
+        : `Login gagal untuk '${username}' dari ${ip}`,
+      ctx: auditContextFromRequest(req),
+    });
     if (failure.locked) {
       return NextResponse.json(
         {
@@ -88,6 +105,14 @@ export async function POST(req: NextRequest) {
   clearLoginFailures(rateKey);
 
   const { user, token } = result;
+  await logAudit({
+    actor: { id: user.id, username: user.username, roles: user.roles },
+    action: 'auth.login_success',
+    target: { label: user.username },
+    summary: `Login berhasil untuk '${user.username}' dari ${ip}`,
+    ctx: auditContextFromRequest(req),
+  });
+
   const res = NextResponse.json({
     success: true,
     message: `Login berhasil. Selamat datang, ${user.display_name || user.username}!`,
@@ -100,7 +125,22 @@ export async function POST(req: NextRequest) {
 /**
  * DELETE /api/auth/login — clears the session cookie (logout).
  */
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  // Best-effort logout audit. We don't have the user object on the way
+  // out (cookie clearing happens before we can re-resolve), so we log
+  // the raw cookie fingerprint + IP. Operators investigating suspicious
+  // logouts can correlate with login_success entries by IP+time.
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+  await logAudit({
+    actor: null,
+    action: 'auth.logout',
+    summary: `Logout dari ${ip}`,
+    ctx: auditContextFromRequest(req),
+  });
+
   const res = NextResponse.json({ success: true });
   clearSessionCookie(res);
   return res;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, createUser, Role } from '@/lib/auth';
+import { requireRole, createUser, Role, type User } from '@/lib/auth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * GET /api/users — list all users (super only).
@@ -65,5 +66,15 @@ export async function POST(req: NextRequest) {
     const status = result.error.includes('sudah dipakai') ? 409 : 400;
     return NextResponse.json({ error: result.error }, { status });
   }
+
+  await logAudit({
+    actor: { id: guard.id, username: guard.username, roles: guard.roles },
+    action: 'user.create',
+    target: { table: 'users', id: result.id, label: username },
+    summary: `Membuat user '${username}' dengan roles [${roles.join(', ')}]`,
+    meta: { roles, display_name },
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, id: result.id });
 }

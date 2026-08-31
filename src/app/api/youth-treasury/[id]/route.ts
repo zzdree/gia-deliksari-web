@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * PATCH /api/youth-treasury/[id] — update a transaction.
@@ -55,6 +56,21 @@ export async function PATCH(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const changes: Record<string, unknown> = {};
+  for (const k of Object.keys(patch)) {
+    if (k === 'updated_at') continue;
+    changes[k] = patch[k];
+  }
+  await logAudit({
+    actor: { id: guard.id, username: guard.username, roles: guard.roles },
+    action: 'kas.update',
+    target: { table: 'youth_treasury_transactions', id },
+    summary: `Update transaksi kas (${Object.keys(changes).join(', ')})`,
+    meta: { changes },
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, transaction: data });
 }
 
@@ -76,11 +92,31 @@ export async function DELETE(
   }
 
   const { id } = await params;
+
+  // Capture summary BEFORE delete so we can log it.
+  const { data: snapshot } = await supabaseAdmin
+    .from('youth_treasury_transactions')
+    .select('transaction_date, type, category, amount')
+    .eq('id', id)
+    .maybeSingle();
+
   const { error } = await supabaseAdmin
     .from('youth_treasury_transactions')
     .delete()
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAudit({
+    actor: { id: guard.id, username: guard.username, roles: guard.roles },
+    action: 'kas.delete',
+    target: { table: 'youth_treasury_transactions', id },
+    summary: snapshot
+      ? `Hapus transaksi ${snapshot.type} Rp ${Number(snapshot.amount).toLocaleString('id-ID')} (${snapshot.category}, ${snapshot.transaction_date})`
+      : `Hapus transaksi kas ${id}`,
+    meta: snapshot ?? undefined,
+    ctx: auditContextFromRequest(req),
+  });
+
   return NextResponse.json({ success: true, id });
 }
