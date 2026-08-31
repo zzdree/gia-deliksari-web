@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 import { getDriveClient } from '@/lib/googleDrive';
 import { readSessionFromCookie } from '@/lib/admin-session.legacy';
+import { logAudit, auditContextFromRequest } from '@/lib/auditLog';
 
 /**
  * GaleriSync Worker — sinkronisasi 1 arah dari Google Drive → Supabase.
@@ -13,15 +14,24 @@ import { readSessionFromCookie } from '@/lib/admin-session.legacy';
  * (mis. Vercel Cron harian). Butuh admin session cookie OR secret key.
  */
 export async function POST(req: NextRequest) {
-  // Auth: cek session admin ATAU header x-sync-secret
+  // Auth: cek 3 jalur berurutan
+  //   1. Vercel Cron job (vercel.json → path /api/gallery/sync).
+  //      Vercel otomatis set header `x-vercel-cron` saat hit endpoint dari
+  //      cron schedule — trusted source, tidak perlu secret tambahan.
+  //   2. External sync caller dengan header `x-sync-secret`.
+  //   3. Admin session (manual trigger dari /admin UI).
+  const isVercelCron = req.headers.get('x-vercel-cron') === '1' || req.headers.get('user-agent')?.includes('vercel-cron');
   const syncSecret = process.env.GALLERY_SYNC_SECRET;
   const providedSecret = req.headers.get('x-sync-secret');
   const session = readSessionFromCookie(req);
 
-  const isAuthed = (syncSecret && providedSecret === syncSecret) || session?.isAdmin === true;
+  const isAuthed =
+    isVercelCron ||
+    (syncSecret && providedSecret === syncSecret) ||
+    session?.isAdmin === true;
   if (!isAuthed) {
     return NextResponse.json(
-      { error: 'Akses ditolak. Butuh admin session atau sync secret.' },
+      { error: 'Akses ditolak. Butuh admin session, sync secret, atau Vercel Cron.' },
       { status: 401 },
     );
   }
@@ -157,6 +167,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Audit log entry — capture the sync outcome for forensic record.
+    const trigger = isVercelCron ? 'vercel-cron' : providedSecret ? 'sync-secret' : 'admin-session';
+    await logAudit({
+      actor: null,
+      action: 'gallery.upload', // closest semantic match; new audit action if needed
+      summary: `[${trigger}] Sync Drive→DB selesai: ${added} baru, ${skipped} skip, ${driveFiles.length} total`,
+      meta: { trigger, added, skipped, totalScanned: driveFiles.length, errors: errors.length > 0 ? errors.slice(0, 10) : undefined },
+      ctx: { ...auditContextFromRequest(req), source: isVercelCron ? 'cron' : 'api' },
+    });
+
     return NextResponse.json({
       success: true,
       added,
@@ -166,6 +186,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[gallery/sync] error:', err);
+    await logAudit({
+      actor: null,
+      action: 'gallery.upload',
+      summary: `Sync Drive→DB GAGAL: ${err.message || 'unknown'}`,
+      ctx: { ...auditContextFromRequest(req), source: 'cron' },
+    });
     return NextResponse.json(
       { error: 'Sinkronisasi gagal: ' + (err.message || 'unknown') },
       { status: 500 },
