@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -207,6 +208,32 @@ export default function RootLayout({
           {children}
           <ScrollToTop />
         </ThemeProvider>
+        {/* Service Worker registration — enables offline access & PWA install.
+            Strategy: register on load, defer activation via SKIP_WAITING. */}
+        <Script id="sw-register" strategy="afterInteractive">{`
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+              navigator.serviceWorker.register('/sw.js').then(
+                function (reg) {
+                  // Listen for updates and prompt user to refresh.
+                  reg.addEventListener('updatefound', function () {
+                    var w = reg.installing;
+                    if (!w) return;
+                    w.addEventListener('statechange', function () {
+                      if (w.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New SW available — auto-activate on next navigation.
+                        w.postMessage({ type: 'SKIP_WAITING' });
+                      }
+                    });
+                  });
+                },
+                function (err) {
+                  console.warn('[sw] registration failed:', err);
+                }
+              );
+            });
+          }
+        `}</Script>
       </body>
     </html>
   );
