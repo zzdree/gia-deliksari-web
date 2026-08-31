@@ -64,13 +64,22 @@ export default function Hero() {
         
         {/* Top Countdown Pill Banner */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 py-2 rounded-full bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm text-xs font-semibold text-[#5A4D4E] dark:text-[#D5C2C4]">
+          <div
+            role="status"
+            aria-live="polite"
+            aria-label={`Ibadah Raya Minggu dalam ${timeLeft.days} hari ${timeLeft.hours} jam ${timeLeft.minutes} menit`}
+            className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 py-2 rounded-full bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm text-xs font-semibold text-[#5A4D4E] dark:text-[#D5C2C4]"
+          >
             <span className="flex items-center gap-1.5 text-[#C5222E] dark:text-[#E03643] font-bold">
               <Calendar className="w-3.5 h-3.5" />
-              <span>Ibadah Raya Berikutnya (Minggu 09.00 WIB):</span>
+              <span className="sr-only sm:not-sr-only">Ibadah Raya Berikutnya · Minggu 09.00 WIB:</span>
+              <span aria-hidden="true" className="hidden sm:inline">Ibadah Raya Berikutnya · Minggu 09.00 WIB:</span>
             </span>
-            <span className="font-mono font-extrabold text-[#1F1617] dark:text-white bg-[#FDF0F0] dark:bg-[#331418] px-2.5 py-0.5 rounded-lg border border-[#F5CDD0] dark:border-[#521E25]">
-              {timeLeft.days}d {timeLeft.hours}j {timeLeft.minutes}m {timeLeft.seconds}d
+            <span
+              aria-hidden="true"
+              className="font-mono font-extrabold text-[#1F1617] dark:text-white bg-[#FDF0F0] dark:bg-[#331418] px-2.5 py-0.5 rounded-lg border border-[#F5CDD0] dark:border-[#521E25]"
+            >
+              {timeLeft.days}h {timeLeft.hours}j {timeLeft.minutes}m {timeLeft.seconds}d
             </span>
           </div>
         </div>
@@ -83,8 +92,8 @@ export default function Hero() {
             
             {/* Mission Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Gereja Isa Almasih Deliksari Semarang</span>
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Gerakan Tumbuh dalam Iman & Kasih</span>
             </div>
 
             {/* Main Editorial Headline */}
@@ -102,7 +111,7 @@ export default function Hero() {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
               <Button
                 as="link"
                 href="#kunjungan"
@@ -111,7 +120,7 @@ export default function Hero() {
                 iconRight={<ArrowRight className="w-4 h-4" />}
                 className="w-full sm:w-auto shadow-red-950/20"
               >
-                Rencanakan Kunjungan & Hadir Onsite
+                Rencanakan Kunjungan
               </Button>
 
               <Button
@@ -122,7 +131,7 @@ export default function Hero() {
                 iconLeft={<Calendar className="w-4 h-4" />}
                 className="w-full sm:w-auto"
               >
-                Lihat Jadwal Ibadah
+                Jadwal Ibadah
               </Button>
 
               <Button
@@ -134,11 +143,11 @@ export default function Hero() {
                 iconLeft={<YouTubeIcon className="w-4 h-4" />}
                 className="w-full sm:w-auto"
               >
-                Streaming YouTube
+                Live Streaming
               </Button>
             </div>
 
-            {/* 3 Quick Micro Stats */}
+            {/* 3 Quick Micro Stats — meaningful numbers only */}
             <div className="pt-6 border-t border-[#EBDDCF]/80 dark:border-[#3A1C20]/80 grid grid-cols-3 gap-4 max-w-lg mx-auto lg:mx-0">
               <div className="space-y-1">
                 <span className="text-xl sm:text-2xl font-extrabold text-[#1F1617] dark:text-white font-mono">4</span>
@@ -146,11 +155,11 @@ export default function Hero() {
               </div>
               <div className="space-y-1 border-x border-[#EBDDCF] dark:border-[#3A1C20] px-2 sm:px-4">
                 <span className="text-xl sm:text-2xl font-extrabold text-[#C5222E] dark:text-[#E03643] font-mono">09.00</span>
-                <p className="text-[11px] sm:text-xs font-semibold text-[#6E5D5F] dark:text-[#B5A1A3]">WIB Ibadah Minggu</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-[#6E5D5F] dark:text-[#B5A1A3]">WIB · Minggu</p>
               </div>
               <div className="space-y-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-[#1F1617] dark:text-white font-mono">100%</span>
-                <p className="text-[11px] sm:text-xs font-semibold text-[#6E5D5F] dark:text-[#B5A1A3]">Kasih & Sambutan</p>
+                <span className="text-xl sm:text-2xl font-extrabold text-[#1F1617] dark:text-white font-mono">47</span>
+                <p className="text-[11px] sm:text-xs font-semibold text-[#6E5D5F] dark:text-[#B5A1A3]">Tahun Melayani</p>
               </div>
             </div>
 
@@ -185,19 +194,31 @@ export default function Hero() {
                 </div>
               </div>
 
-              {/* Floating Cross Pastoral Card */}
+              {/* Floating Pastoral Card — replaces redundant brand badge */}
               <div className="absolute -bottom-5 -left-5 sm:-bottom-6 sm:-left-6 p-4 sm:p-5 rounded-[1.75rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-lg flex items-center gap-3.5 max-w-[260px]">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#C5222E] to-[#80141C] flex items-center justify-center text-white font-extrabold text-lg shadow-sm">
-                  ✝
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#C5222E] to-[#80141C] flex items-center justify-center text-white shadow-sm" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                    <path d="M10.5 3.5h3v7h7v3h-3v7h-3v-7h-7v-3h3z" />
+                  </svg>
                 </div>
                 <div>
                   <span className="text-xs font-extrabold text-[#1F1617] dark:text-[#F5EFEB] block">
-                    GIA Deliksari
+                    Ibadah Onsite Aktif
                   </span>
                   <span className="text-[11px] font-medium text-[#6E5D5F] dark:text-[#B5A1A3]">
-                    Growing Church! 🔥
+                    Datang & Beribadah Bersama
                   </span>
                 </div>
+              </div>
+
+              {/* Floating Quick Access — Jadwal Singkat */}
+              <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-lg hidden sm:block">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3]">
+                  Ibadah Berikutnya
+                </p>
+                <p className="text-sm font-extrabold text-[#C5222E] dark:text-[#E03643]">
+                  Minggu · 09.00 WIB
+                </p>
               </div>
 
             </div>
@@ -205,6 +226,20 @@ export default function Hero() {
 
         </div>
 
+      </div>
+
+      {/* Scroll Indicator — affordance to keep exploring */}
+      <div className="flex justify-center pb-6 sm:pb-10">
+        <a
+          href="#kunjungan"
+          aria-label="Scroll ke bawah untuk konten selanjutnya"
+          className="inline-flex flex-col items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#6E5D5F] dark:text-[#B5A1A3] hover:text-[#C5222E] dark:hover:text-[#E03643] transition-colors group"
+        >
+          <span>Scroll</span>
+          <span aria-hidden="true" className="block w-5 h-8 rounded-full border-2 border-current relative overflow-hidden">
+            <span className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1 h-2 rounded-full bg-current animate-bounce" />
+          </span>
+        </a>
       </div>
     </section>
   );
