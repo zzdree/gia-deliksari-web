@@ -138,7 +138,7 @@ export default function SuperPage() {
       .then((d) => {
         if (!d.authenticated) {
           router.replace('/super'); // stay — login screen renders
-        } else if (d.user?.role !== 'super') {
+        } else if (!d.user?.roles?.includes('super')) {
           showToast('Akses ditolak. Halaman ini khusus superuser.');
           router.replace('/home');
         } else {
@@ -185,7 +185,7 @@ export default function SuperPage() {
         setAuthError(data.error || 'Login gagal');
         return;
       }
-      if (data.user?.role !== 'super') {
+      if (!data.user?.roles?.includes('super')) {
         setAuthError('Akses ditolak. Halaman ini khusus superuser.');
         return;
       }

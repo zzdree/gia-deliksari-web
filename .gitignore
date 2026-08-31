@@ -54,3 +54,8 @@ supabase/.temp/
 # Image optimization outputs (re-generable via scripts/optimize-images.mjs)
 public/images/**/*.webp
 public/images/**/*.avif
+
+# Playwright E2E artifacts
+tests/**/playwright-report/
+tests/**/test-results/
+playwright/.cache/
