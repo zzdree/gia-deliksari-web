@@ -261,17 +261,43 @@ Warta jemaat **diinput oleh admin melalui Portal Admin** (`/admin` → tab **War
 | **Superuser** | `/super` | `super` only |
 | **Kas Youth** | `/kas` | `super` \| `treasurer` |
 
-### 10.2 Akun Default (seeded di production)
+### 10.2 Akun Production (per Agustus 2026)
 
-| Username | Password | Role | Portal |
+| Username | Password | Role | Portal yang bisa diakses |
 |---|---|---|---|
-| `andreas` | `5050` | super | `/super`, `/admin`, `/kas` |
-| `noel` | `1515` | admin | `/admin` |
-| `mara` | `1234` | treasurer | `/kas` |
+| `andreas` | `5050` | `super` | `/super`, `/admin`, `/kas` |
+| `zzdree` | `9090` | `admin` + `treasurer` (multi-role) | `/admin`, `/kas` |
 
-> ⚠️ Password default ini hanya untuk setup awal. Production harus langsung diganti melalui `/super` (tab edit user).
+> ⚠️ Kedua akun di atas adalah akun **sandbox/testing** untuk owner. Akun user baru (admin, treasurer, atau super tambahan) **hanya dibuat via `/super`** oleh superuser.
+> Akun lama `noel` (admin) dan `mara` (treasurer) sudah di-nonaktifkan (soft-delete).
 
-### 10.3 Modul Portal Admin (`/admin`)
+### 10.3 Skema Role & Multi-Role
+
+Setiap user bisa punya **multiple roles** (TEXT[] array):
+
+| Role | Akses |
+|---|---|
+| `super` | `/super` (manage user) + `/admin` + `/kas` — full access |
+| `admin` | `/admin` (warta, roster, khotbah, inventaris) |
+| `treasurer` | `/kas` (manajemen kas youth) |
+
+Contoh:
+- `zzdree` punya roles `['admin', 'treasurer']` → akses ke `/admin` DAN `/kas` tapi TIDAK ke `/super`.
+- `andreas` punya roles `['super']` → akses ke semua portal.
+
+### 10.4 PIN / Password Policy
+
+- **PIN wajib 4-64 karakter** (per requirement user — standar operasional gereja, akun dipakai operator yang sehari-hari, jadi 4 digit cukup).
+- Disimpan sebagai **bcrypt hash** (cost 10). Plaintext tidak pernah di disk/env/log.
+- User `super` boleh pakai password lebih panjang untuk keamanan ekstra.
+
+### 10.5 Rate Limit Login
+
+- **3x gagal dalam 5 menit** per (IP + username) → akun **dikunci 1 menit** (HTTP 429 + `Retry-After` header).
+- Counter di-reset saat login berhasil.
+- Tujuan: prevent brute force PIN 4-digit.
+
+### 10.6 Modul Portal Admin (`/admin`)
 
 5 tab utama:
 
@@ -283,15 +309,15 @@ Warta jemaat **diinput oleh admin melalui Portal Admin** (`/admin` → tab **War
 | 🎬 CMS Khotbah & Galeri | Kelola khotbah + YouTube sync + foto Drive | `sermons`, `gallery_items` |
 | 📦 Inventaris & Cek | Checklist sound system, multimedia, musik, ruangan | `inventory_items` |
 
-### 10.4 Modul Portal Superuser (`/super`)
+### 10.7 Modul Portal Superuser (`/super`)
 
-- List semua user (username, role, status aktif, login terakhir)
-- Tambah user baru (username, password, role, nama tampilan)
-- Edit role / password / aktif/nonaktif
+- List semua user (username, roles[], status aktif, login terakhir)
+- Tambah user baru (username, password, roles[], nama tampilan)
+- Edit roles[] / password / aktif/nonaktif
 - Soft-delete untuk audit trail (tidak hard delete)
 - Quick-link ke `/admin` & `/kas`
 
-### 10.5 Modul Portal Kas (`/kas`)
+### 10.8 Modul Portal Kas (`/kas`)
 
 - **Saldo realtime**: 3 card (Total Pemasukan, Total Pengeluaran, Saldo)
 - **Buku Kas**: list transaksi dengan filter tipe (income/expense) + search
@@ -301,29 +327,29 @@ Warta jemaat **diinput oleh admin melalui Portal Admin** (`/admin` → tab **War
 - Tabel: `youth_treasury_transactions` (dengan kolom `created_by` → `users`)
 - View: `youth_treasury_balance` (aggregate income/expense/balance)
 
-### 10.6 Endpoint Backend
+### 10.9 Endpoint Backend
 
 | Endpoint | Auth | Fungsi |
 |---|---|---|
-| `POST /api/auth/login` | public | Login username+password (bcrypt) → cookie `gia_session` |
+| `POST /api/auth/login` | public | Login username+password (bcrypt) → cookie `gia_session`. Rate-limited 3x/5min per (IP+username). |
 | `DELETE /api/auth/login` | session | Clear cookie (logout) |
-| `GET /api/auth/check` | session | Return `{ authenticated, user }` |
-| `GET /api/users` | super | List semua user |
-| `POST /api/users` | super | Create user baru (bcrypt-hash) |
-| `PATCH /api/users/[id]` | super | Update role/password/active |
+| `GET /api/auth/check` | session | Return `{ authenticated, user: { id, username, roles, display_name } }` |
+| `GET /api/users` | super | List semua user dengan `roles[]` |
+| `POST /api/users` | super | Create user baru (bcrypt-hash) — roles array |
+| `PATCH /api/users/[id]` | super | Update `roles[]` / password / display_name / active |
 | `DELETE /api/users/[id]` | super | Soft-deactivate (set active=false) |
-| `GET /api/admin/data?table=…` | super,admin | Read CRUD table (admin/super only) |
-| `POST /api/admin/data` | super,admin | Upsert rows |
-| `DELETE /api/admin/data?table=…&id=…` | super,admin | Hard-delete row |
+| `GET /api/admin/data?table=…` | super \| admin | Read CRUD table |
+| `POST /api/admin/data` | super \| admin | Upsert rows |
+| `DELETE /api/admin/data?table=…&id=…` | super \| admin | Hard-delete row |
 | `GET /api/public/data?table=…` | public | Read publik (filtered, sanitized) |
 | `POST /api/public/ministry-requests` | public + rate limit | Submit permohonan jemaat |
 | `POST /api/gallery/upload` | public (multipart) | Upload foto ke Drive + Supabase |
 | `POST /api/gallery/sync` | session atau `x-sync-secret` | Sinkronisasi Drive → DB |
 | `GET /api/youtube/latest` | public | Fetch video khotbah terbaru YouTube Data API v3 |
-| `GET /api/youth-treasury` | super,treasurer | List transaksi + balance aggregate |
-| `POST /api/youth-treasury` | super,treasurer | Create transaksi |
-| `PATCH /api/youth-treasury/[id]` | super,treasurer | Update transaksi |
-| `DELETE /api/youth-treasury/[id]` | super,treasurer | Hard-delete transaksi |
+| `GET /api/youth-treasury` | super \| treasurer | List transaksi + balance aggregate |
+| `POST /api/youth-treasury` | super \| treasurer | Create transaksi |
+| `PATCH /api/youth-treasury/[id]` | super \| treasurer | Update transaksi |
+| `DELETE /api/youth-treasury/[id]` | super \| treasurer | Hard-delete transaksi |
 
 ---
 

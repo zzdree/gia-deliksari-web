@@ -12,10 +12,15 @@ permissions:
   contents: write
   issues: write
 
+# Concurrency control: cancel in-progress runs if new one starts (prevents race on git push)
+concurrency:
+  group: daily-backup
+  cancel-in-progress: true
+
 jobs:
   backup:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repo
@@ -42,6 +47,8 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore(backup): snapshot $(date -u +%Y-%m-%d_%H%M%S)"
+            # Pull latest changes with rebase before pushing to avoid race condition
+            git pull --rebase origin main
             git push
           fi
 
