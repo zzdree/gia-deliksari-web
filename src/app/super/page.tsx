@@ -1,42 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import {
-  ShieldCheck,
-  Plus,
-  Trash2,
-  Edit2,
-  X,
-  KeyRound,
-  ArrowLeft,
-  RefreshCw,
-  CheckCircle2,
-  LogOut,
-  ExternalLink,
-  Users,
-  Power,
-  ScrollText,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Plus, RefreshCw, LogOut, ExternalLink, Users } from 'lucide-react';
 import { useToast } from '@/components/admin/useToast';
+import LoginForm from '@/components/super/LoginForm';
+import UserModal, { type Role, type UserFormData } from '@/components/super/UserModal';
+import UserTable, { type User } from '@/components/super/UserTable';
+import AuditLogTable, { type AuditEntry, AUDIT_LIMIT } from '@/components/super/AuditLogTable';
 
-type Role = 'super' | 'admin' | 'treasurer';
-
-interface User {
-  id: string;
-  username: string;
-  roles: Role[];
-  display_name: string | null;
-  active: boolean;
-  last_login_at: string | null;
-  created_at: string;
-}
+/**
+ * /super page orchestrator.
+ *
+ * Composes 4 focused child components:
+ *   - LoginForm (login screen)
+ *   - UserTable + UserModal (user CRUD)
+ *   - AuditLogTable (read-only audit log with filters)
+ *
+ * Owns: auth check, data fetching, mutation API calls, modal open/close state.
+ * Children are pure-ish (props in, callbacks out).
+ */
 
 interface AuthUser {
   id: string;
@@ -45,99 +31,41 @@ interface AuthUser {
   display_name: string | null;
 }
 
-const ROLE_META: Record<Role, { label: string; color: string; badge: string; portal: string }> = {
-  super: {
-    label: 'Superuser',
-    color: 'bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border-[#F5CDD0] dark:border-[#521E25]',
-    badge: '🔑 Semua Akses',
-    portal: '/super',
-  },
-  admin: {
-    label: 'Admin / Operator',
-    color: 'bg-[#FFF2EE] dark:bg-[#331812] text-[#C83E20] dark:text-[#F88B72] border-[#FCD2C7] dark:border-[#57241A]',
-    badge: '📋 Warta + Roster + Inventaris',
-    portal: '/admin',
-  },
-  treasurer: {
-    label: 'Bendahara Youth',
-    color: 'bg-[#FEF9EC] dark:bg-[#332612] text-[#B87A14] dark:text-[#F0BE5E] border-[#F8E3B5] dark:border-[#543E19]',
-    badge: '💰 Manajemen Kas Youth',
-    portal: '/kas',
-  },
-};
-
-// =============== AUDIT LOG TYPES & HELPERS ===============
-interface AuditEntry {
-  id: string;
-  actor_id: string | null;
-  actor_username: string | null;
-  actor_roles: Role[] | null;
-  action: string;
-  target_table: string | null;
-  target_id: string | null;
-  summary: string;
-  meta: Record<string, unknown> | null;
-  ip: string | null;
-  user_agent: string | null;
-  source: string;
-  created_at: string;
-}
-
-const ACTION_META: Record<string, { label: string; color: string; icon: string }> = {
-  'auth.login_success':  { label: 'Login OK',      color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60', icon: '🔓' },
-  'auth.login_failure':  { label: 'Login Gagal',   color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '🔒' },
-  'auth.login_lockout':  { label: 'Lockout',       color: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',                       icon: '⛔' },
-  'auth.logout':         { label: 'Logout',        color: 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-900/40 dark:text-stone-300 dark:border-stone-700/60',                  icon: '🚪' },
-  'user.create':         { label: 'Buat User',     color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60',                       icon: '➕' },
-  'user.update':         { label: 'Update User',   color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60',               icon: '✏️' },
-  'user.deactivate':     { label: 'Nonaktifkan',   color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '⛔' },
-  'warta.create':        { label: 'Warta +',       color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60',                       icon: '📢' },
-  'warta.update':        { label: 'Warta ✏️',      color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60',               icon: '📢' },
-  'warta.delete':        { label: 'Warta 🗑️',     color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '📢' },
-  'warta.pin':           { label: 'Warta Pin',     color: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60',               icon: '📌' },
-  'roster.create':       { label: 'Roster +',      color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60',                       icon: '👥' },
-  'roster.update':       { label: 'Roster ✏️',     color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60',               icon: '👥' },
-  'roster.delete':       { label: 'Roster 🗑️',    color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '👥' },
-  'inventory.update':    { label: 'Inventaris',    color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',         icon: '📦' },
-  'sermon.create':       { label: 'Khotbah +',     color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60',                       icon: '🎬' },
-  'sermon.update':       { label: 'Khotbah ✏️',    color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60',               icon: '🎬' },
-  'sermon.delete':       { label: 'Khotbah 🗑️',   color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '🎬' },
-  'gallery.upload':      { label: 'Upload Foto',   color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',         icon: '🖼️' },
-  'gallery.delete':      { label: 'Hapus Foto',    color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '🖼️' },
-  'ministry_request.update': { label: 'Layanan Jemaat', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60',                icon: '🫶' },
-  'kas.create':          { label: 'Kas +',         color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',         icon: '💰' },
-  'kas.update':          { label: 'Kas ✏️',        color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60',               icon: '💰' },
-  'kas.delete':          { label: 'Kas 🗑️',       color: 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]',                              icon: '💰' },
-};
-
 export default function SuperPage() {
   const router = useRouter();
   const { showToast, ToastView } = useToast();
+
+  // --- Auth state ---
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // --- User CRUD state ---
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [modalState, setModalState] = useState<{
+    open: boolean;
+    editingId: string | null;
+    initial: UserFormData;
+  }>({
+    open: false,
+    editingId: null,
+    initial: { username: '', password: '', roles: ['admin'], display_name: '' },
+  });
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
+  // --- Audit log state ---
+  const [auditItems, setAuditItems] = useState<AuditEntry[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditOffset, setAuditOffset] = useState(0);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditFilter, setAuditFilter] = useState({ actor: '', action: '', since: '', until: '' });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<{
-    username: string;
-    password: string;
-    roles: Role[];
-    display_name: string;
-  }>({ username: '', password: '', roles: ['admin'], display_name: '' });
-
-  // Check auth on mount
+  // ---------- Auth ----------
   useEffect(() => {
     fetch('/api/auth/check')
       .then((r) => r.json())
       .then((d) => {
         if (!d.authenticated) {
-          router.replace('/super'); // stay — login screen renders
+          router.replace('/super');
         } else if (!d.user?.roles?.includes('super')) {
           showToast('Akses ditolak. Halaman ini khusus superuser.');
           router.replace('/home');
@@ -149,8 +77,9 @@ export default function SuperPage() {
       .catch(() => setAuthChecked(true));
   }, [router, showToast]);
 
+  // ---------- User CRUD ----------
   const loadUsers = async () => {
-    setLoading(true);
+    setUsersLoading(true);
     try {
       const res = await fetch('/api/users');
       const data = await res.json();
@@ -163,7 +92,7 @@ export default function SuperPage() {
     } catch {
       showToast('Gagal memuat daftar user');
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
     }
   };
 
@@ -171,29 +100,21 @@ export default function SuperPage() {
     if (authUser) loadUsers();
   }, [authUser]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setAuthError(data.error || 'Login gagal');
-        return;
-      }
-      if (!data.user?.roles?.includes('super')) {
-        setAuthError('Akses ditolak. Halaman ini khusus superuser.');
-        return;
-      }
-      setAuthUser(data.user);
-      showToast('Login berhasil. Selamat datang, ' + (data.user.display_name || data.user.username));
-    } catch {
-      setAuthError('Terjadi kesalahan koneksi');
+  const handleLogin = async (username: string, password: string): Promise<void> => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Login gagal');
     }
+    if (!data.user?.roles?.includes('super')) {
+      throw new Error('Akses ditolak. Halaman ini khusus superuser.');
+    }
+    setAuthUser(data.user);
+    showToast('Login berhasil. Selamat datang, ' + (data.user.display_name || data.user.username));
   };
 
   const handleLogout = async () => {
@@ -203,30 +124,40 @@ export default function SuperPage() {
     showToast('Berhasil logout');
   };
 
+  // ---------- Modal handlers ----------
   const openCreateModal = () => {
-    setEditingId(null);
-    setForm({ username: '', password: '', roles: ['admin'], display_name: '' });
-    setIsModalOpen(true);
+    setModalState({
+      open: true,
+      editingId: null,
+      initial: { username: '', password: '', roles: ['admin'], display_name: '' },
+    });
   };
 
   const openEditModal = (u: User) => {
-    setEditingId(u.id);
-    setForm({ username: u.username, password: '', roles: u.roles, display_name: u.display_name || '' });
-    setIsModalOpen(true);
+    setModalState({
+      open: true,
+      editingId: u.id,
+      initial: {
+        username: u.username,
+        password: '',
+        roles: u.roles,
+        display_name: u.display_name || '',
+      },
+    });
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const closeModal = () => setModalState((s) => ({ ...s, open: false }));
+
+  const saveUser = async (form: UserFormData) => {
     try {
-      if (editingId) {
-        // PATCH
+      if (modalState.editingId) {
         const patch: Record<string, unknown> = {
           roles: form.roles,
           display_name: form.display_name.trim() || null,
           active: true,
         };
         if (form.password) patch.password = form.password;
-        const res = await fetch(`/api/users/${editingId}`, {
+        const res = await fetch(`/api/users/${modalState.editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(patch),
@@ -238,7 +169,6 @@ export default function SuperPage() {
         }
         showToast('User berhasil diupdate');
       } else {
-        // POST
         const res = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -256,15 +186,14 @@ export default function SuperPage() {
         }
         showToast('User baru berhasil dibuat');
       }
-      setIsModalOpen(false);
-      setEditingId(null);
+      closeModal();
       loadUsers();
     } catch {
       showToast('Terjadi kesalahan koneksi');
     }
   };
 
-  const handleDeactivate = async (u: User) => {
+  const deactivateUser = async (u: User) => {
     if (!confirm(`Nonaktifkan user '${u.username}'? User akan diarsipkan dan tidak bisa login lagi.`)) return;
     try {
       const res = await fetch(`/api/users/${u.id}`, { method: 'DELETE' });
@@ -280,25 +209,13 @@ export default function SuperPage() {
     }
   };
 
-  // ---------------------- AUDIT LOG ----------------------
-  const [auditItems, setAuditItems] = useState<AuditEntry[]>([]);
-  const [auditTotal, setAuditTotal] = useState(0);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [auditOffset, setAuditOffset] = useState(0);
-  const [auditFilter, setAuditFilter] = useState({
-    actor: '',
-    action: '',
-    since: '',
-    until: '',
-  });
-  const AUDIT_LIMIT = 25;
-
-  const loadAudit = async (reset = false) => {
+  // ---------- Audit log ----------
+  const fetchAudit = async (offsetToUse: number, reset = false) => {
     setAuditLoading(true);
     try {
       const params = new URLSearchParams({
         limit: String(AUDIT_LIMIT),
-        offset: String(reset ? 0 : auditOffset),
+        offset: String(offsetToUse),
       });
       if (auditFilter.actor) params.set('actor_username', auditFilter.actor);
       if (auditFilter.action) params.set('action', auditFilter.action);
@@ -322,141 +239,23 @@ export default function SuperPage() {
   };
 
   useEffect(() => {
-    if (authUser) loadAudit(true);
+    if (authUser) fetchAudit(0, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser]);
 
-  const nextAuditPage = () => {
-    const newOffset = auditOffset + AUDIT_LIMIT;
-    setAuditOffset(newOffset);
-    // Trigger fetch
-    setAuditLoading(true);
-    const params = new URLSearchParams({ limit: String(AUDIT_LIMIT), offset: String(newOffset) });
-    if (auditFilter.actor) params.set('actor_username', auditFilter.actor);
-    if (auditFilter.action) params.set('action', auditFilter.action);
-    if (auditFilter.since) params.set('since', auditFilter.since);
-    if (auditFilter.until) params.set('until', auditFilter.until);
-    fetch(`/api/audit-log?${params.toString()}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setAuditItems(d.items || []);
-        setAuditTotal(d.total || 0);
-      })
-      .catch(() => showToast('Gagal memuat audit log'))
-      .finally(() => setAuditLoading(false));
-  };
-  const prevAuditPage = () => {
+  const goToPrev = () => {
     const newOffset = Math.max(0, auditOffset - AUDIT_LIMIT);
     setAuditOffset(newOffset);
-    setAuditLoading(true);
-    const params = new URLSearchParams({ limit: String(AUDIT_LIMIT), offset: String(newOffset) });
-    if (auditFilter.actor) params.set('actor_username', auditFilter.actor);
-    if (auditFilter.action) params.set('action', auditFilter.action);
-    if (auditFilter.since) params.set('since', auditFilter.since);
-    if (auditFilter.until) params.set('until', auditFilter.until);
-    fetch(`/api/audit-log?${params.toString()}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setAuditItems(d.items || []);
-        setAuditTotal(d.total || 0);
-      })
-      .catch(() => showToast('Gagal memuat audit log'))
-      .finally(() => setAuditLoading(false));
+    fetchAudit(newOffset);
   };
 
-  // ---------------------- LOGIN SCREEN ----------------------
-  if (authChecked && !authUser) {
-    return (
-      <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 py-20 relative overflow-hidden">
-          <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#C5222E]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-10 -right-20 w-80 h-80 bg-[#80141C]/15 rounded-full blur-3xl pointer-events-none" />
+  const goToNext = () => {
+    const newOffset = auditOffset + AUDIT_LIMIT;
+    setAuditOffset(newOffset);
+    fetchAudit(newOffset);
+  };
 
-          <div className="w-full max-w-md bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-xl p-8 sm:p-10 relative z-10 space-y-6 animate-in fade-in zoom-in-95 duration-300">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#C5222E] to-[#80141C] text-white flex items-center justify-center mx-auto shadow-lg shadow-red-900/20">
-                <KeyRound className="w-8 h-8" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F1617] dark:text-white tracking-tight">
-                Superuser Portal
-              </h1>
-              <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
-                Kelola akun pengurus gereja: superuser, admin/operator, dan bendahara youth.
-                <br />
-                <span className="text-[#C5222E] dark:text-[#E03643] font-bold">
-                  Akses khusus role = super.
-                </span>
-              </p>
-            </div>
-
-            {authError && (
-              <div className="p-4 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold leading-snug animate-shake">
-                {authError}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  Username Superuser
-                </label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  autoComplete="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="andreas"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] text-sm focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all placeholder:text-stone-400"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  PIN / Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] text-sm focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all placeholder:text-stone-400 tracking-widest"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white font-extrabold text-sm shadow-md shadow-red-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Masuk Superuser Portal</span>
-              </button>
-            </form>
-
-            <div className="pt-2 text-center space-y-1">
-              <Link
-                href="/home"
-                className="inline-flex items-center gap-2 text-xs font-bold text-[#C5222E] hover:underline"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Kembali ke Beranda Jemaat</span>
-              </Link>
-              <div className="text-[11px] text-[#6E5D5F] dark:text-[#B5A1A3] pt-2">
-                Default superuser: <code className="font-mono font-bold text-[#C5222E]">andreas</code> /
-                <code className="font-mono font-bold text-[#C5222E]">5050</code>
-              </div>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </main>
-    );
-  }
-
+  // ---------- Render ----------
   if (!authChecked) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FDFBF7] dark:bg-[#150B0D]">
@@ -465,13 +264,25 @@ export default function SuperPage() {
     );
   }
 
-  // ---------------------- DASHBOARD ----------------------
+  if (!authUser) {
+    return (
+      <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 py-20 relative overflow-hidden">
+          <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#C5222E]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 -right-20 w-80 h-80 bg-[#80141C]/15 rounded-full blur-3xl pointer-events-none" />
+          <LoginForm onLogin={handleLogin} />
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
   const activeCount = users.filter((u) => u.active).length;
 
   return (
     <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
       <Navbar />
-
       {ToastView}
 
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
@@ -484,17 +295,15 @@ export default function SuperPage() {
               </span>
               <div className="flex items-center gap-1.5 text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
                 <Users className="w-3.5 h-3.5 text-[#C5222E]" />
-                <span>
-                  {activeCount}/{users.length} user aktif
-                </span>
+                <span>{activeCount}/{users.length} user aktif</span>
               </div>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F1617] dark:text-white tracking-tight">
               Manajemen Akun Pengurus Gereja
             </h1>
             <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
-              Kelola akun superuser, admin/operator, dan bendahara youth.
-              Akun baru otomatis mendapat akses ke portal sesuai role-nya.
+              Kelola akun superuser, admin/operator, dan bendahara youth. Akun baru otomatis mendapat
+              akses ke portal sesuai role-nya.
             </p>
           </div>
 
@@ -504,10 +313,9 @@ export default function SuperPage() {
               title="Refresh"
               className="p-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors flex items-center gap-2 text-xs font-bold"
             >
-              <RefreshCw className={`w-4 h-4 text-[#C5222E] ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-[#C5222E] ${usersLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
-
             <Link
               href="/home"
               className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors text-xs font-bold flex items-center gap-2"
@@ -515,7 +323,6 @@ export default function SuperPage() {
               <ExternalLink className="w-3.5 h-3.5 text-[#C5222E]" />
               <span>Lihat Website</span>
             </Link>
-
             <button
               onClick={handleLogout}
               className="px-4 py-3 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25] transition-colors text-xs font-bold flex items-center gap-2"
@@ -526,19 +333,18 @@ export default function SuperPage() {
           </div>
         </div>
 
-        {/* Header dengan greeting */}
+        {/* Greeting */}
         <div className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
           Login sebagai{' '}
           <span className="font-bold text-[#1F1617] dark:text-[#F5EFEB]">
             {authUser?.display_name || authUser?.username}
-          </span>
-          {' '}
+          </span>{' '}
           <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">
             ({authUser?.roles?.join(', ') || authUser?.username})
           </span>
         </div>
 
-        {/* Action Bar */}
+        {/* User Management Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
@@ -553,304 +359,32 @@ export default function SuperPage() {
             className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            <span>Tambah User Baru</span>
+            Tambah User Baru
           </button>
         </div>
 
-        {/* Users Table */}
-        <div className="overflow-x-auto rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
-              <tr>
-                <th className="p-4 font-bold">Username</th>
-                <th className="p-4 font-bold">Role</th>
-                <th className="p-4 font-bold">Nama Tampilan</th>
-                <th className="p-4 font-bold">Status</th>
-                <th className="p-4 font-bold">Login Terakhir</th>
-                <th className="p-4 font-bold text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBDDCF] dark:divide-[#3A1C20]">
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                    Belum ada user. Klik "Tambah User Baru" untuk mulai.
-                  </td>
-                </tr>
-              ) : (
-                users.map((u) => {
-                  // primary role for badge color (use first role in array)
-                  const primaryRole = (u.roles && u.roles[0]) || 'admin';
-                  const meta = ROLE_META[primaryRole];
-                  return (
-                    <tr
-                      key={u.id}
-                      className={`hover:bg-[#FDFBF7] dark:hover:bg-[#261317] transition-colors ${
-                        !u.active ? 'opacity-50' : ''
-                      }`}
-                    >
-                      <td className="p-4">
-                        <div className="font-mono font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                          {u.username}
-                        </div>
-                        {u.id === authUser?.id && (
-                          <span className="text-[10px] uppercase font-bold text-[#C5222E] dark:text-[#E03643]">
-                            ← Anda
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${meta.color}`}>
-                          {meta.label}
-                        </span>
-                        <div className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3] mt-0.5">
-                          → {meta.portal}
-                        </div>
-                      </td>
-                      <td className="p-4 text-[#1F1617] dark:text-[#F5EFEB]">
-                        {u.display_name || <span className="text-[#6E5D5F] dark:text-[#B5A1A3] italic">—</span>}
-                      </td>
-                      <td className="p-4">
-                        {u.active ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60">
-                            <Power className="w-3 h-3" />
-                            Aktif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-stone-100 text-stone-600 border border-stone-200 dark:bg-stone-900/40 dark:text-stone-400 dark:border-stone-800/60">
-                            <Power className="w-3 h-3" />
-                            Nonaktif
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                        {u.last_login_at
-                          ? new Date(u.last_login_at).toLocaleString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : <span className="italic">Belum pernah</span>}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {u.active && (
-                            <button
-                              onClick={() => openEditModal(u)}
-                              title="Edit role / password"
-                              className="p-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20]"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {u.active && u.username !== authUser?.username && (
-                            <button
-                              onClick={() => handleDeactivate(u)}
-                              title="Nonaktifkan"
-                              className="p-2 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <UserTable
+          users={users}
+          loading={usersLoading}
+          currentUsername={authUser?.username ?? null}
+          onEdit={openEditModal}
+          onDeactivate={deactivateUser}
+        />
 
-        {/* =============== AUDIT LOG =============== */}
-        <div className="space-y-4 pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white flex items-center gap-2">
-                <ScrollText className="w-5 h-5 text-[#C5222E]" />
-                Audit Log ({auditTotal})
-              </h2>
-              <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
-                Trail siapa melakukan apa di portal gereja. Append-only — hanya super yang bisa membaca.
-              </p>
-            </div>
-            <button
-              onClick={() => loadAudit(true)}
-              className="px-4 py-2 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold flex items-center gap-2"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#C5222E] ${auditLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
-
-          {/* Filter Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-3xl bg-[#F7F2E8] dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20]">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3]">Actor</label>
-              <input
-                type="text"
-                placeholder="username"
-                value={auditFilter.actor}
-                onChange={(e) => setAuditFilter({ ...auditFilter, actor: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3]">Action</label>
-              <input
-                type="text"
-                placeholder="e.g. warta.create"
-                value={auditFilter.action}
-                onChange={(e) => setAuditFilter({ ...auditFilter, action: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30 font-mono"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3]">Dari</label>
-              <input
-                type="date"
-                value={auditFilter.since}
-                onChange={(e) => setAuditFilter({ ...auditFilter, since: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5D5F] dark:text-[#B5A1A3]">Sampai</label>
-              <input
-                type="date"
-                value={auditFilter.until}
-                onChange={(e) => setAuditFilter({ ...auditFilter, until: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
-              />
-            </div>
-            <div className="sm:col-span-4 flex justify-end">
-              <button
-                onClick={() => loadAudit(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold flex items-center gap-2"
-              >
-                <Search className="w-3.5 h-3.5" />
-                Terapkan Filter
-              </button>
-            </div>
-          </div>
-
-          {/* Audit Table */}
-          <div className="overflow-x-auto rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
-                <tr>
-                  <th className="p-4 font-bold w-40">Waktu (WIB)</th>
-                  <th className="p-4 font-bold w-44">Action</th>
-                  <th className="p-4 font-bold">Summary</th>
-                  <th className="p-4 font-bold w-32">Actor</th>
-                  <th className="p-4 font-bold w-32">IP</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EBDDCF] dark:divide-[#3A1C20]">
-                {auditLoading && auditItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                      Memuat…
-                    </td>
-                  </tr>
-                ) : auditItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-xs text-[#6E5D5F] dark:text-[#B5A1A3]">
-                      Belum ada entry. Aktivitas pertama akan muncul di sini setelah admin login.
-                    </td>
-                  </tr>
-                ) : (
-                  auditItems.map((a) => {
-                    const meta = ACTION_META[a.action] ?? {
-                      label: a.action,
-                      color: 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-900/40 dark:text-stone-300 dark:border-stone-700/60',
-                      icon: '•',
-                    };
-                    const ts = new Date(a.created_at);
-                    return (
-                      <tr key={a.id} className="hover:bg-[#FDFBF7] dark:hover:bg-[#261317] transition-colors">
-                        <td className="p-4 text-xs text-[#5A4D4E] dark:text-[#D5C2C4] whitespace-nowrap font-mono">
-                          {ts.toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          })}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.color}`}
-                            title={a.action}
-                          >
-                            <span>{meta.icon}</span>
-                            {meta.label}
-                          </span>
-                        </td>
-                        <td className="p-4 text-[#1F1617] dark:text-[#F5EFEB]">
-                          {a.summary}
-                          {a.target_table && (
-                            <div className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3] mt-0.5 font-mono">
-                              {a.target_table}{a.target_id ? ` · ${String(a.target_id).slice(0, 8)}…` : ''}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-4 text-xs">
-                          {a.actor_username ? (
-                            <>
-                              <div className="font-mono font-bold text-[#1F1617] dark:text-[#F5EFEB]">
-                                {a.actor_username}
-                              </div>
-                              {a.actor_roles && a.actor_roles.length > 0 && (
-                                <div className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3]">
-                                  {a.actor_roles.join(', ')}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="italic text-[#6E5D5F] dark:text-[#B5A1A3]">anonim</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-[10px] font-mono text-[#6E5D5F] dark:text-[#B5A1A3]">
-                          {a.ip || <span className="italic">—</span>}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {auditTotal > AUDIT_LIMIT && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[#6E5D5F] dark:text-[#B5A1A3]">
-                Menampilkan {auditOffset + 1}–{Math.min(auditOffset + AUDIT_LIMIT, auditTotal)} dari {auditTotal}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={prevAuditPage}
-                  disabled={auditOffset === 0 || auditLoading}
-                  className="px-3 py-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] font-bold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  Sebelumnya
-                </button>
-                <button
-                  onClick={nextAuditPage}
-                  disabled={auditOffset + AUDIT_LIMIT >= auditTotal || auditLoading}
-                  className="px-3 py-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] font-bold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Berikutnya
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Audit Log */}
+        <AuditLogTable
+          entries={auditItems}
+          total={auditTotal}
+          loading={auditLoading}
+          offset={auditOffset}
+          limit={AUDIT_LIMIT}
+          filter={auditFilter}
+          onFilterChange={setAuditFilter}
+          onApplyFilter={() => fetchAudit(0, true)}
+          onRefresh={() => fetchAudit(auditOffset)}
+          onPrev={goToPrev}
+          onNext={goToNext}
+        />
 
         {/* Quick Access to Other Portals */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
@@ -881,137 +415,13 @@ export default function SuperPage() {
         </div>
       </div>
 
-      {/* ============== MODAL: ADD / EDIT USER ============== */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
-                {editingId ? 'Edit User' : 'Tambah User Baru'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  Username *
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={!!editingId}
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder="contoh: noel"
-                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                />
-                {editingId && (
-                  <p className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3]">
-                    Username tidak bisa diubah. Buat user baru jika perlu ganti.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  {editingId ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password *'}
-                </label>
-                <input
-                  type="password"
-                  required={!editingId}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="••••"
-                  minLength={4}
-                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
-                />
-                <p className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3]">
-                  Minimal 4 karakter. Disimpan dengan bcrypt (tidak bisa dibaca plain).
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  Role * <span className="text-[10px] normal-case opacity-60">(pilih 1 atau lebih)</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {(['super', 'admin', 'treasurer'] as Role[]).map((r) => {
-                    const isChecked = form.roles.includes(r);
-                    return (
-                      <label
-                        key={r}
-                        className={`flex items-start gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                          isChecked
-                            ? 'border-[#C5222E] bg-[#FDF0F0] dark:bg-[#331418]'
-                            : 'border-[#EBDDCF] dark:border-[#3A1C20] bg-[#F7F2E8] dark:bg-[#2A161A] hover:border-[#C5222E]/40'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? Array.from(new Set([...form.roles, r]))
-                              : form.roles.filter((x) => x !== r);
-                            setForm({ ...form, roles: next });
-                          }}
-                          className="mt-0.5 rounded text-[#C5222E] focus:ring-[#C5222E]"
-                        />
-                        <div className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] leading-tight">
-                          {r === 'super' && '🔑 Superuser'}
-                          {r === 'admin' && '📋 Admin/Operator'}
-                          {r === 'treasurer' && '💰 Bendahara'}
-                          <div className="text-[10px] text-[#6E5D5F] dark:text-[#B5A1A3] font-normal mt-0.5">
-                            {r === 'super' && 'Akses penuh ke semua portal'}
-                            {r === 'admin' && 'Akses ke /admin'}
-                            {r === 'treasurer' && 'Akses ke /kas'}
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-                {form.roles.length === 0 && (
-                  <p className="text-[10px] text-[#9A1620] dark:text-[#F2828C] font-bold">
-                    ⚠️ Pilih minimal 1 role
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
-                  Nama Tampilan (opsional)
-                </label>
-                <input
-                  type="text"
-                  value={form.display_name}
-                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                  placeholder="contoh: Noel Yosan (Admin)"
-                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
-                />
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
-                >
-                  {editingId ? 'Simpan Perubahan' : 'Buat User'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {modalState.open && (
+        <UserModal
+          initial={modalState.initial}
+          editingId={modalState.editingId}
+          onSave={saveUser}
+          onClose={closeModal}
+        />
       )}
 
       <Footer />
