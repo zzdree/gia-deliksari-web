@@ -45,6 +45,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
+    // Serve AVIF first (smallest), then WebP, then original. Browsers
+    // negotiate via Accept header; non-supporting clients get the original
+    // JPEG/PNG from public/. Sibling AVIF/WebP files are pre-built by
+    // scripts/optimize-images.mjs for static assets — runtime <Image>
+    // components use Next.js automatic transcoding with these priorities.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -54,7 +60,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'azgyihsukmatsggppxuz.supabase.co',
+      },
     ],
+    // Cache optimized images for 30 days — they're content-addressable
+    // (hash in URL), so safe to cache aggressively.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
   },
   async redirects() {
     return [

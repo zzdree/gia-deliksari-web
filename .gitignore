@@ -50,3 +50,7 @@ public/images/scraped/
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Image optimization outputs (re-generable via scripts/optimize-images.mjs)
+public/images/**/*.webp
+public/images/**/*.avif
