@@ -1,0 +1,2277 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import {
+  Announcement,
+  ServantRoster,
+  InventoryItem,
+  MinistryCategory,
+  InventoryCategory,
+  Sermon,
+  GalleryItem,
+  MinistryRequest,
+  MinistryRequestType
+} from '@/types';
+import { adminDataStore } from '@/lib/storage';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import {
+  Bell,
+  Users,
+  PackageCheck,
+  Plus,
+  Trash2,
+  Edit2,
+  Pin,
+  Calendar,
+  Search,
+  CheckSquare,
+  Square,
+  Database,
+  RefreshCw,
+  Phone,
+  LogOut,
+  KeyRound,
+  ShieldCheck,
+  Sparkles,
+  ArrowLeft,
+  X,
+  HeartHandshake,
+  Video,
+  Camera,
+  Printer,
+  Share2,
+  Copy,
+  ExternalLink,
+  Clock,
+  Check,
+  MessageSquare,
+  Play,
+  HardDrive,
+  FolderOpen,
+  Upload,
+  Radio
+} from 'lucide-react';
+import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
+import UploadPhotoModal from '@/components/UploadPhotoModal';
+import { useToast } from '@/components/admin/useToast';
+import { useAdminData } from '@/components/admin/useAdminData';
+
+type Role = 'super' | 'admin' | 'treasurer';
+
+interface AuthUser {
+  id: string;
+  username: string;
+  roles: Role[];
+  display_name: string | null;
+}
+
+function useCurrentUser() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check existing session on mount
+  useEffect(() => {
+    fetch('/api/auth/check')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated && d.user?.roles?.some((r: string) => r === 'super' || r === 'admin')) {
+          setUser(d.user);
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAuthError(data.error || 'Login gagal');
+        return;
+      }
+      if (data.user?.role !== 'super' && data.user?.role !== 'admin') {
+        setAuthError('Akses ditolak. Halaman ini khusus admin/operator.');
+        return;
+      }
+      setUser(data.user);
+      setUsername('');
+      setPassword('');
+    } catch {
+      setAuthError('Terjadi kesalahan koneksi');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/login', { method: 'DELETE' });
+    } catch {
+      /* ignore */
+    }
+    setUser(null);
+    setUsername('');
+    setPassword('');
+    setAuthError(null);
+  };
+
+  return {
+    user,
+    authChecked,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    authError,
+    handleLogin,
+    handleLogout,
+  };
+}
+
+export default function AdminDashboard() {
+  // Cross-tab infrastructure: auth, data, toast. See hooks/ for details.
+  const {
+    user: authUser,
+    authChecked,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    authError,
+    handleLogin,
+    handleLogout,
+  } = useCurrentUser();
+
+  // Toast (placeholder — assigned after showToast is in scope below)
+  const { showToast, ToastView } = useToast();
+
+  // Tab & Data State
+  const [activeTab, setActiveTab] = useState<'announcements' | 'roster' | 'requests' | 'media' | 'inventory'>('announcements');
+
+  const {
+    loading,
+    loadAllData,
+    announcements,
+    setAnnouncements,
+    roster,
+    setRoster,
+    inventory,
+    setInventory,
+    sermons,
+    setSermons,
+    gallery,
+    setGallery,
+    requests,
+    setRequests,
+  } = useAdminData(authUser !== null, showToast);
+
+  // Announcement Form State
+  const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
+  const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
+  const [annForm, setAnnForm] = useState<{
+    title: string;
+    category: MinistryCategory;
+    content: string;
+    eventDate: string;
+    isPinned: boolean;
+    isPublished: boolean;
+    badgeText: string;
+    author: string;
+  }>({
+    title: '',
+    category: 'general',
+    content: '',
+    eventDate: new Date().toISOString().split('T')[0],
+    isPinned: false,
+    isPublished: true,
+    badgeText: 'Warta Baru',
+    author: 'Sekretariat GIA Deliksari',
+  });
+
+  // Roster Category & Form State
+  const [rosterCategoryTab, setRosterCategoryTab] = useState<'general' | 'youth' | 'kidz' | 'hana'>('general');
+  const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
+  const [editingRosterId, setEditingRosterId] = useState<string | null>(null);
+  const [rosterForm, setRosterForm] = useState<{
+    serviceCategory: 'general' | 'youth' | 'kidz' | 'hana';
+    serviceDate: string;
+    role: string;
+    servantName: string;
+    phone: string;
+    status: 'confirmed' | 'pending' | 'replacement';
+    notes: string;
+  }>({
+    serviceCategory: 'general',
+    serviceDate: new Date().toISOString().split('T')[0],
+    role: 'Worship Leader (WL)',
+    servantName: '',
+    phone: '',
+    status: 'confirmed',
+    notes: '',
+  });
+
+  // Broadcast & Print Modals
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
+  // Ministry Request Filter
+  const [requestFilter, setRequestFilter] = useState<'all' | 'prayer' | 'sacrament' | 'komsel' | 'volunteer'>('all');
+
+  // Media Subtab (Sermons vs Gallery)
+  const [mediaSubTab, setMediaSubTab] = useState<'sermons' | 'gallery'>('sermons');
+  
+  // Sermon Modal
+  const [isSermonModalOpen, setIsSermonModalOpen] = useState(false);
+  const [editingSermonId, setEditingSermonId] = useState<string | null>(null);
+  const [sermonForm, setSermonForm] = useState<{
+    title: string;
+    speaker: string;
+    passage: string;
+    date: string;
+    youtubeUrl: string;
+    thumbnail: string;
+    category: string;
+  }>({
+    title: '',
+    speaker: 'Ps. Yohanes Sutono',
+    passage: '',
+    date: 'Minggu, 30 Agustus 2026',
+    youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+    thumbnail: '/images/gallery-2.jpg',
+    category: 'Ibadah Raya',
+  });
+
+  // Gallery Modal
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [isUploadPhotoModalOpen, setIsUploadPhotoModalOpen] = useState(false);
+  const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
+  const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
+  const [galleryForm, setGalleryForm] = useState<{
+    title: string;
+    category: 'ibadah' | 'worship' | 'youth' | 'komunitas' | 'umum';
+    image: string;
+    date: string;
+  }>({
+    title: '',
+    category: 'ibadah',
+    image: '/images/gallery-1.jpg',
+    date: 'Agustus 2026',
+  });
+
+  // Inventory Form & Filter State
+  const [invCategoryFilter, setInvCategoryFilter] = useState<string>('all');
+  const [invSearchQuery, setInvSearchQuery] = useState('');
+  const [isInvModalOpen, setIsInvModalOpen] = useState(false);
+  const [editingInvId, setEditingInvId] = useState<string | null>(null);
+  const [invForm, setInvForm] = useState<{
+    name: string;
+    category: InventoryCategory;
+    code: string;
+    quantity: number;
+    isChecked: boolean;
+    condition: 'good' | 'maintenance' | 'broken';
+    location: string;
+    notes: string;
+  }>({
+    name: '',
+    category: 'Sound System',
+    code: '',
+    quantity: 1,
+    isChecked: true,
+    condition: 'good',
+    location: 'Meja Sound Operator',
+    notes: '',
+  });
+
+  // Notification Toast — provided by useToast() hook above
+
+  // Announcement Handlers
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let updated: Announcement[];
+    if (editingAnnId) {
+      updated = announcements.map((item) =>
+        item.id === editingAnnId
+          ? {
+              ...item,
+              ...annForm,
+            }
+          : item
+      );
+      showToast('Warta Jemaat berhasil diperbarui');
+    } else {
+      const newAnn: Announcement = {
+        id: `ann-${Date.now()}`,
+        ...annForm,
+        createdAt: new Date().toISOString(),
+      };
+      updated = [newAnn, ...announcements];
+      showToast('Warta Jemaat baru berhasil diterbitkan');
+    }
+    setAnnouncements(updated);
+    await adminDataStore.saveAnnouncements(updated);
+    setIsAnnModalOpen(false);
+    setEditingAnnId(null);
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus warta jemaat ini?')) {
+      const updated = announcements.filter((item) => item.id !== id);
+      setAnnouncements(updated);
+      await adminDataStore.saveAnnouncements(updated);
+      showToast('Warta Jemaat berhasil dihapus');
+    }
+  };
+
+  const handleTogglePinAnnouncement = async (item: Announcement) => {
+    const updated = announcements.map((a) =>
+      a.id === item.id ? { ...a, isPinned: !a.isPinned } : a
+    );
+    setAnnouncements(updated);
+    await adminDataStore.saveAnnouncements(updated);
+    showToast(item.isPinned ? 'Pin warta dilepas' : 'Warta disematkan ke paling atas');
+  };
+
+  // Roster Handlers
+  const handleSaveRoster = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let updated: ServantRoster[];
+    if (editingRosterId) {
+      updated = roster.map((item) =>
+        item.id === editingRosterId
+          ? {
+              ...item,
+              ...rosterForm,
+            }
+          : item
+      );
+      showToast('Jadwal pelayan berhasil diperbarui');
+    } else {
+      const newRoster: ServantRoster = {
+        id: `rst-${Date.now()}`,
+        ...rosterForm,
+        createdAt: new Date().toISOString(),
+      };
+      updated = [...roster, newRoster];
+      showToast('Petugas ibadah baru berhasil ditambahkan');
+    }
+    setRoster(updated);
+    await adminDataStore.saveRoster(updated);
+    setIsRosterModalOpen(false);
+    setEditingRosterId(null);
+  };
+
+  const handleDeleteRoster = async (id: string) => {
+    if (confirm('Hapus petugas pelayan ini dari roster?')) {
+      const updated = roster.filter((item) => item.id !== id);
+      setRoster(updated);
+      await adminDataStore.saveRoster(updated);
+      showToast('Petugas berhasil dihapus dari jadwal');
+    }
+  };
+
+  // Ministry Requests Handlers
+  const handleUpdateRequestStatus = async (id: string, status: 'new' | 'in_progress' | 'completed') => {
+    const updated = requests.map(r => r.id === id ? { ...r, status } : r);
+    setRequests(updated);
+    await adminDataStore.updateMinistryRequests(updated);
+    showToast('Status permohonan berhasil diperbarui');
+  };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (confirm('Hapus riwayat permohonan jemaat ini?')) {
+      const updated = requests.filter(r => r.id !== id);
+      setRequests(updated);
+      await adminDataStore.updateMinistryRequests(updated);
+      showToast('Permohonan berhasil dihapus');
+    }
+  };
+
+  // Sermon Handlers
+  const handleSaveSermon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let updated: Sermon[];
+    if (editingSermonId) {
+      updated = sermons.map((s) => s.id === editingSermonId ? { ...s, ...sermonForm } : s);
+      showToast('Khotbah berhasil diperbarui');
+    } else {
+      const newSermon: Sermon = {
+        id: `srm-${Date.now()}`,
+        ...sermonForm,
+        createdAt: new Date().toISOString(),
+      };
+      updated = [newSermon, ...sermons];
+      showToast('Khotbah baru berhasil ditambahkan');
+    }
+    setSermons(updated);
+    await adminDataStore.saveSermons(updated);
+    setIsSermonModalOpen(false);
+    setEditingSermonId(null);
+  };
+
+  const handleDeleteSermon = async (id: string) => {
+    if (confirm('Hapus arsip khotbah ini?')) {
+      const updated = sermons.filter(s => s.id !== id);
+      setSermons(updated);
+      await adminDataStore.saveSermons(updated);
+      showToast('Khotbah berhasil dihapus');
+    }
+  };
+
+  const handleSyncYouTube = async () => {
+    setIsSyncingYouTube(true);
+    try {
+      const res = await fetch('/api/youtube/latest');
+      const data = await res.json();
+      if (data.sermons && data.sermons.length > 0) {
+        // MERGE, not replace: keep manually curated sermons (srm-* ids),
+        // upsert YouTube items by their stable yt id, newest first.
+        const incoming: Sermon[] = data.sermons;
+        const manual = sermons.filter((s) => !incoming.some((v) => v.id === s.id));
+        const merged = [...incoming, ...manual].sort(
+          (a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''),
+        );
+        setSermons(merged);
+        await adminDataStore.saveSermons(merged);
+        if (data.source === 'youtube_api') {
+          showToast(`Sinkronisasi ${incoming.length} video terbaru — khotbah manual tetap aman`);
+        } else {
+          showToast('Sinkronisasi selesai (menggunakan data cadangan/kurasi)');
+        }
+      }
+    } catch (err) {
+      showToast('Gagal sinkronisasi YouTube Data API');
+    } finally {
+      setIsSyncingYouTube(false);
+    }
+  };
+
+  // Gallery Handlers
+  const handleSaveGallery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let updated: GalleryItem[];
+    if (editingGalleryId) {
+      updated = gallery.map((g) => g.id === editingGalleryId ? { ...g, ...galleryForm } : g);
+      showToast('Foto galeri berhasil diperbarui');
+    } else {
+      const newGal: GalleryItem = {
+        id: `gal-${Date.now()}`,
+        ...galleryForm,
+        createdAt: new Date().toISOString(),
+      };
+      updated = [newGal, ...gallery];
+      showToast('Foto galeri berhasil ditambahkan');
+    }
+    setGallery(updated);
+    await adminDataStore.saveGallery(updated);
+    setIsGalleryModalOpen(false);
+    setEditingGalleryId(null);
+  };
+
+  const handleDeleteGallery = async (id: string) => {
+    if (confirm('Hapus foto ini dari galeri?')) {
+      const updated = gallery.filter(g => g.id !== id);
+      setGallery(updated);
+      await adminDataStore.saveGallery(updated);
+      showToast('Foto galeri berhasil dihapus');
+    }
+  };
+
+  // Inventory Handlers
+  const handleToggleInventoryCheck = async (item: InventoryItem) => {
+    const updated = inventory.map((inv) =>
+      inv.id === item.id
+        ? {
+            ...inv,
+            isChecked: !inv.isChecked,
+            lastCheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            checkedBy: 'Majelis Admin',
+          }
+        : inv
+    );
+    setInventory(updated);
+    await adminDataStore.saveInventory(updated);
+  };
+
+  const handleSaveInventory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let updated: InventoryItem[];
+    if (editingInvId) {
+      updated = inventory.map((inv) =>
+        inv.id === editingInvId
+          ? {
+              ...inv,
+              ...invForm,
+              lastCheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            }
+          : inv
+      );
+      showToast('Data barang inventaris berhasil diupdate');
+    } else {
+      const newInv: InventoryItem = {
+        id: `inv-${Date.now()}`,
+        ...invForm,
+        createdAt: new Date().toISOString(),
+        lastCheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        checkedBy: 'Majelis Admin',
+      };
+      updated = [...inventory, newInv];
+      showToast('Barang inventaris baru berhasil ditambahkan');
+    }
+    setInventory(updated);
+    await adminDataStore.saveInventory(updated);
+    setIsInvModalOpen(false);
+    setEditingInvId(null);
+  };
+
+  const handleDeleteInventory = async (id: string) => {
+    if (confirm('Hapus barang ini dari daftar inventaris gereja?')) {
+      const updated = inventory.filter((inv) => inv.id !== id);
+      setInventory(updated);
+      await adminDataStore.saveInventory(updated);
+      showToast('Barang inventaris berhasil dihapus');
+    }
+  };
+
+  // Helper Badge Color
+  const getCategoryBadgeClass = (category: string) => {
+    switch (category) {
+      case 'general':
+      case 'ibadah':
+        return 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]';
+      case 'youth':
+        return 'bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7] dark:bg-[#331812] dark:text-[#F88B72] dark:border-[#57241A]';
+      case 'kidz':
+      case 'worship':
+        return 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]';
+      case 'hana':
+      case 'komunitas':
+        return 'bg-[#FDF0F4] text-[#A6264A] border-[#F7C6D5] dark:bg-[#33121E] dark:text-[#EA7FA0] dark:border-[#541D30]';
+      default:
+        return 'bg-[#F7F2E8] text-[#6E5D5F] border-[#EBDDCF] dark:bg-[#2A161A] dark:text-[#B5A1A3] dark:border-[#3A1C20]';
+    }
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    switch (cat) {
+      case 'general': return 'Ibadah Raya';
+      case 'youth': return 'Grow Youth (PRBK)';
+      case 'kidz': return 'COC Kidz (Sekolah Minggu)';
+      case 'hana': return 'Wanita Hana & Komsel';
+      case 'all': return 'Umum / Semua';
+      default: return cat;
+    }
+  };
+
+  // Generate Broadcast WhatsApp text for Roster
+  const currentCategoryRoster = roster.filter(r => r.serviceCategory === rosterCategoryTab);
+  const broadcastText = `*JADWAL PELAYANAN ${getCategoryLabel(rosterCategoryTab).toUpperCase()}*\n*GIA Deliksari Semarang*\n\n` +
+    currentCategoryRoster.map((r, i) => `${i + 1}. *${r.role}*: ${r.servantName} (${r.status === 'confirmed' ? '✅ Siap' : r.status === 'replacement' ? '⚠️ Pengganti' : '⏳ Menunggu'})\n${r.notes ? `   _Catatan: ${r.notes}_\n` : ''}`).join('\n') +
+    `\n_Mari melayani dengan sukacita bagi kemuliaan Kristus. Tuhan Yesus memberkati!_`;
+
+  // Filtered requests
+  const filteredRequests = requestFilter === 'all' 
+    ? requests 
+    : requests.filter(r => r.type === requestFilter);
+
+  // ----------------------------------------------------
+  // LOGIN SCREEN
+  // ----------------------------------------------------
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#FDFBF7] dark:bg-[#150B0D]">
+        <div className="animate-pulse text-[#6E5D5F] dark:text-[#B5A1A3]">Memuat…</div>
+      </main>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 py-20 relative overflow-hidden">
+          {/* Subtle Maroon Glow */}
+          <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#C5222E]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 -right-20 w-80 h-80 bg-[#80141C]/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="w-full max-w-md bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-xl p-8 sm:p-10 relative z-10 space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#C5222E] to-[#80141C] text-white flex items-center justify-center mx-auto shadow-lg shadow-red-900/20">
+                <KeyRound className="w-8 h-8" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F1617] dark:text-white tracking-tight">
+                Portal Majelis & Admin
+              </h1>
+              <p className="text-xs sm:text-sm text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
+                Kelola warta jemaat, plotting pelayan, permohonan doa, media khotbah, dan inventaris GIA Deliksari.
+              </p>
+            </div>
+
+            {authError && (
+              <div className="p-4 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] border border-[#F5CDD0] dark:border-[#521E25] text-[#9A1620] dark:text-[#F2828C] text-xs font-bold leading-snug animate-shake">
+                {authError}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB] uppercase tracking-wider">
+                  Kata Sandi Pengurus
+                </label>
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password admin..."
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB] text-sm focus:ring-2 focus:ring-[#C5222E]/30 focus:border-[#C5222E] outline-none transition-all placeholder:text-stone-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white font-extrabold text-sm shadow-md shadow-red-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Masuk ke Dashboard</span>
+              </button>
+            </form>
+
+            <div className="pt-2 text-center">
+              <Link
+                href="/home"
+                className="inline-flex items-center gap-2 text-xs font-bold text-[#C5222E] hover:underline"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Kembali ke Halaman Beranda Jemaat</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  // ----------------------------------------------------
+  // MAIN ADMIN DASHBOARD
+  // ----------------------------------------------------
+  return (
+    <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#150B0D] text-[#1F1617] dark:text-[#F5EFEB] flex flex-col justify-between selection:bg-[#C5222E] selection:text-white">
+      <Navbar />
+
+      {/* Toast Notification (rendered by useToast hook) */}
+      {ToastView}
+
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
+        
+        {/* Top Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-[2.5rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]">
+                Majelis & Pastoral Portal
+              </span>
+              <div className="flex items-center gap-1.5 text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                <Database className="w-3.5 h-3.5 text-[#C5222E]" />
+                <span>{isSupabaseConfigured ? 'Supabase Database' : 'Local Storage Fallback'}</span>
+              </div>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F1617] dark:text-white tracking-tight">
+              Pusat Manajemen Pelayanan
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button
+              onClick={loadAllData}
+              title="Refresh Data"
+              className="p-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors flex items-center gap-2 text-xs font-bold"
+            >
+              <RefreshCw className={`w-4 h-4 text-[#C5222E] ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh Data</span>
+            </button>
+
+            <Link
+              href="/home"
+              className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors text-xs font-bold flex items-center gap-2"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#C5222E]" />
+              <span>Lihat Website</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-3 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25] transition-colors text-xs font-bold flex items-center gap-2"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Keluar</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 5 Main Nav Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 p-2 bg-[#F7F2E8] dark:bg-[#221215] rounded-3xl border border-[#EBDDCF] dark:border-[#3A1C20]">
+          {[
+            { id: 'announcements', label: 'Warta Jemaat', count: announcements.length, icon: Bell },
+            { id: 'roster', label: 'Roster Pelayanan', count: roster.length, icon: Users },
+            { id: 'requests', label: 'Layanan Jemaat', count: requests.filter(r => r.status === 'new').length, badge: 'Baru', icon: HeartHandshake },
+            { id: 'media', label: 'CMS Khotbah & Galeri', count: sermons.length + gallery.length, icon: Video },
+            { id: 'inventory', label: 'Inventaris & Cek', count: inventory.length, icon: PackageCheck },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3.5 px-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white shadow-md'
+                    : 'text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-white/60 dark:hover:bg-[#2A161A]'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{tab.label}</span>
+                {tab.count > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-[#EBDDCF] dark:bg-[#3A1C20] text-[#1F1617] dark:text-[#F5EFEB]'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ========================================================================= */}
+        {/* TAB 1: WARTA JEMAAT */}
+        {/* ========================================================================= */}
+        {activeTab === 'announcements' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                  Kelola Warta & Pengumuman Jemaat
+                </h2>
+                <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                  Warta yang dipublish akan otomatis tayang di halaman utama website jemaat.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingAnnId(null);
+                  setAnnForm({
+                    title: '',
+                    category: 'general',
+                    content: '',
+                    eventDate: new Date().toISOString().split('T')[0],
+                    isPinned: false,
+                    isPublished: true,
+                    badgeText: 'Warta Baru',
+                    author: 'Sekretariat GIA Deliksari',
+                  });
+                  setIsAnnModalOpen(true);
+                }}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Warta Baru</span>
+              </button>
+            </div>
+
+            {/* List Announcements Table / Cards */}
+            <div className="space-y-4">
+              {announcements.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-6 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-[#C5222E]/40 transition-colors"
+                >
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryBadgeClass(item.category)}`}>
+                        {getCategoryLabel(item.category)}
+                      </span>
+                      {item.isPinned && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FEF9EC] text-[#B87A14] border border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19] flex items-center gap-1">
+                          <Pin className="w-3 h-3" />
+                          <span>Tersemat (Pinned)</span>
+                        </span>
+                      )}
+                      {!item.isPublished && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F7F2E8] text-[#6E5D5F] border border-[#EBDDCF] dark:bg-[#2A161A] dark:text-[#B5A1A3] dark:border-[#3A1C20]">
+                          Draft (Tidak Tayang)
+                        </span>
+                      )}
+                      <span className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4] flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-[#C5222E]" />
+                        <span>{item.eventDate}</span>
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-extrabold text-[#1F1617] dark:text-white">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4] line-clamp-2 leading-relaxed">
+                      {item.content}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                    <button
+                      onClick={() => handleTogglePinAnnouncement(item)}
+                      title={item.isPinned ? 'Lepas Pin' : 'Sematkan Warta'}
+                      className={`p-3 rounded-2xl border transition-colors ${
+                        item.isPinned
+                          ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]'
+                          : 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] border-[#EBDDCF] dark:border-[#3A1C20]'
+                      }`}
+                    >
+                      <Pin className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setEditingAnnId(item.id);
+                        setAnnForm({
+                          title: item.title,
+                          category: item.category,
+                          content: item.content,
+                          eventDate: item.eventDate,
+                          isPinned: item.isPinned,
+                          isPublished: item.isPublished,
+                          badgeText: item.badgeText || '',
+                          author: item.author || 'Sekretariat GIA Deliksari',
+                        });
+                        setIsAnnModalOpen(true);
+                      }}
+                      className="p-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors"
+                      title="Edit Warta"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteAnnouncement(item.id)}
+                      className="p-3 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25] transition-colors"
+                      title="Hapus Warta"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2: ROSTER PELAYANAN (DENGAN CETAK JADWAL & BROADCAST WA) */}
+        {/* ========================================================================= */}
+        {activeTab === 'roster' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                  Plotting & Jadwal Pelayan Ibadah Mingguan
+                </h2>
+                <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                  Kelola nama pelayan, status konfirmasi tugas, dan broadcast pengingat WhatsApp.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setIsPrintModalOpen(true)}
+                  className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors text-xs font-bold flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4 text-[#C5222E]" />
+                  <span>Cetak / Export Jadwal</span>
+                </button>
+
+                <button
+                  onClick={() => setIsBroadcastModalOpen(true)}
+                  className="px-4 py-3 rounded-2xl bg-[#FEF9EC] dark:bg-[#332612] text-[#B87A14] dark:text-[#F0BE5E] border border-[#F8E3B5] dark:border-[#543E19] text-xs font-bold flex items-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Broadcast WA Pelayan</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingRosterId(null);
+                    setRosterForm({
+                      serviceCategory: rosterCategoryTab,
+                      serviceDate: new Date().toISOString().split('T')[0],
+                      role: 'Worship Leader (WL)',
+                      servantName: '',
+                      phone: '',
+                      status: 'confirmed',
+                      notes: '',
+                    });
+                    setIsRosterModalOpen(true);
+                  }}
+                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Petugas</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4 Community Tabs for Roster */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#F7F2E8] dark:bg-[#221215] rounded-2xl border border-[#EBDDCF] dark:border-[#3A1C20]">
+              {[
+                { id: 'general', label: '1. Ibadah Raya (Umum)' },
+                { id: 'youth', label: '2. Grow Generation (Youth)' },
+                { id: 'kidz', label: '3. COC Kidz (Sekolah Minggu)' },
+                { id: 'hana', label: '4. Wanita Hana & Komsel' },
+              ].map((cTab) => {
+                const isActive = rosterCategoryTab === cTab.id;
+                return (
+                  <button
+                    key={cTab.id}
+                    onClick={() => setRosterCategoryTab(cTab.id as any)}
+                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                      isActive
+                        ? 'bg-white dark:bg-[#2A161A] text-[#C5222E] shadow-sm border border-[#EBDDCF] dark:border-[#3A1C20]'
+                        : 'text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-white/40'
+                    }`}
+                  >
+                    {cTab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Roster Table */}
+            <div className="overflow-x-auto rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
+                  <tr>
+                    <th className="p-4 font-bold">Peran / Tugas</th>
+                    <th className="p-4 font-bold">Nama Pelayan</th>
+                    <th className="p-4 font-bold">Tanggal Ibadah</th>
+                    <th className="p-4 font-bold">Status Kesiapan</th>
+                    <th className="p-4 font-bold">Catatan</th>
+                    <th className="p-4 font-bold text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EBDDCF] dark:divide-[#3A1C20]">
+                  {currentCategoryRoster.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                        Belum ada petugas terjadwal untuk kategori ini. Klik "Tambah Petugas" di atas.
+                      </td>
+                    </tr>
+                  ) : (
+                    currentCategoryRoster.map((item) => (
+                      <tr key={item.id} className="hover:bg-[#FDFBF7] dark:hover:bg-[#261317] transition-colors">
+                        <td className="p-4 font-bold text-[#1F1617] dark:text-white">
+                          {item.role}
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-[#1F1617] dark:text-[#F5EFEB]">{item.servantName}</div>
+                          {item.phone && (
+                            <a
+                              href={`https://wa.me/${item.phone.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-[#C5222E] hover:underline flex items-center gap-1 mt-0.5"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>{item.phone}</span>
+                            </a>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                          {item.serviceDate}
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold border inline-block ${
+                              item.status === 'confirmed'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                                : item.status === 'replacement'
+                                ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]'
+                                : 'bg-[#F7F2E8] text-[#6E5D5F] border-[#EBDDCF] dark:bg-[#2A161A] dark:text-[#B5A1A3] dark:border-[#3A1C20]'
+                            }`}
+                          >
+                            {item.status === 'confirmed' ? 'Siap Melayani' : item.status === 'replacement' ? 'Perlu Pengganti' : 'Menunggu Konfirmasi'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-xs text-[#5A4D4E] dark:text-[#D5C2C4] max-w-xs truncate">
+                          {item.notes || '-'}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingRosterId(item.id);
+                                setRosterForm({
+                                  serviceCategory: item.serviceCategory,
+                                  serviceDate: item.serviceDate,
+                                  role: item.role,
+                                  servantName: item.servantName,
+                                  phone: item.phone || '',
+                                  status: item.status,
+                                  notes: item.notes || '',
+                                });
+                                setIsRosterModalOpen(true);
+                              }}
+                              className="p-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20]"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRoster(item.id)}
+                              className="p-2 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]"
+                              title="Hapus"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3: LAYANAN & PERMOHONAN JEMAAT */}
+        {/* ========================================================================= */}
+        {activeTab === 'requests' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                  Permohonan Jemaat & Formulir Masuk
+                </h2>
+                <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                  Daftar jemaat yang mengajukan pokok doa, pendaftaran baptisan, komsel, dan kerinduan melayani.
+                </p>
+              </div>
+
+              {/* Filter Chips */}
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: 'all', label: 'Semua Permohonan' },
+                  { id: 'prayer', label: 'Doa & Konseling' },
+                  { id: 'sacrament', label: 'Sakramen Baptis' },
+                  { id: 'komsel', label: 'Komsel Ekklesia' },
+                  { id: 'volunteer', label: 'Volunteer Pelayan' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setRequestFilter(f.id as any)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      requestFilter === f.id
+                        ? 'bg-[#C5222E] text-white shadow-sm'
+                        : 'bg-white dark:bg-[#221215] text-[#5A4D4E] dark:text-[#D5C2C4] border border-[#EBDDCF] dark:border-[#3A1C20]'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Requests Cards List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredRequests.length === 0 ? (
+                <div className="col-span-2 p-12 text-center rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] space-y-2">
+                  <HeartHandshake className="w-10 h-10 text-[#C5222E] mx-auto opacity-60" />
+                  <h3 className="font-bold text-base text-[#1F1617] dark:text-white">Belum Ada Permohonan Masuk</h3>
+                  <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">Formulir yang diisi jemaat di website akan otomatis muncul di sini.</p>
+                </div>
+              ) : (
+                filteredRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-6 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm space-y-4 hover:border-[#C5222E]/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+                            req.type === 'prayer' ? 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0]' :
+                            req.type === 'sacrament' ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5]' :
+                            req.type === 'komsel' ? 'bg-[#FDF0F4] text-[#A6264A] border-[#F7C6D5]' :
+                            'bg-[#FFF2EE] text-[#C83E20] border-[#FCD2C7]'
+                          }`}>
+                            {req.type === 'prayer' ? 'Doa & Konseling' : req.type === 'sacrament' ? 'Sakramen' : req.type === 'komsel' ? 'Komsel' : 'Volunteer'}
+                          </span>
+                          <span className="text-[11px] text-[#5A4D4E] dark:text-[#D5C2C4]">
+                            {new Date(req.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-extrabold text-[#1F1617] dark:text-white">{req.name}</h3>
+                        <p className="text-xs font-bold text-[#C5222E]">{req.subType}</p>
+                      </div>
+
+                      {/* Status Selector */}
+                      <select
+                        value={req.status}
+                        onChange={(e) => handleUpdateRequestStatus(req.id, e.target.value as any)}
+                        className={`text-xs font-bold rounded-xl px-2.5 py-1 outline-none border cursor-pointer ${
+                          req.status === 'completed'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : req.status === 'in_progress'
+                            ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E]'
+                            : 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C]'
+                        }`}
+                      >
+                        <option value="new">🔴 Baru Masuk</option>
+                        <option value="in_progress">🟡 Sedang Diproses</option>
+                        <option value="completed">🟢 Selesai Dilayani</option>
+                      </select>
+                    </div>
+
+                    {req.message && (
+                      <div className="p-3.5 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#5A4D4E] dark:text-[#D5C2C4] leading-relaxed">
+                        "{req.message}"
+                      </div>
+                    )}
+
+                    {req.needPastoralVisit && (
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#C5222E]">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Memohon Kunjungan Doa Hari Selasa</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex items-center justify-between gap-3 border-t border-[#EBDDCF] dark:border-[#3A1C20]">
+                      <a
+                        href={`https://wa.me/${req.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Syalom ${req.name}, kami dari Tim Pastoral GIA Deliksari menindaklanjuti permohonan Anda...`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <WhatsAppIcon className="w-3.5 h-3.5 text-white" />
+                        <span>Hubungi WhatsApp</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleDeleteRequest(req.id)}
+                        className="p-2 rounded-xl text-[#9A1620] dark:text-[#F2828C] hover:bg-[#FDF0F0] dark:hover:bg-[#331418] transition-colors"
+                        title="Hapus Permohonan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 4: CMS KHOTBAH & GALERI FOTO */}
+        {/* ========================================================================= */}
+        {activeTab === 'media' && (
+          <div className="space-y-6 animate-in fade-in">
+            {/* Sub-tab toggle & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 p-1.5 bg-[#F7F2E8] dark:bg-[#221215] rounded-2xl border border-[#EBDDCF] dark:border-[#3A1C20] w-fit">
+                <button
+                  onClick={() => setMediaSubTab('sermons')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    mediaSubTab === 'sermons'
+                      ? 'bg-[#C5222E] text-white shadow-sm'
+                      : 'text-[#5A4D4E] dark:text-[#D5C2C4]'
+                  }`}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Arsip Khotbah ({sermons.length})</span>
+                </button>
+                <button
+                  onClick={() => setMediaSubTab('gallery')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    mediaSubTab === 'gallery'
+                      ? 'bg-[#C5222E] text-white shadow-sm'
+                      : 'text-[#5A4D4E] dark:text-[#D5C2C4]'
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Galeri Dokumentasi ({gallery.length})</span>
+                </button>
+              </div>
+
+              {mediaSubTab === 'sermons' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleSyncYouTube}
+                    disabled={isSyncingYouTube}
+                    className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] hover:bg-[#EBDDCF] dark:hover:bg-[#331418] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-[#C5222E] ${isSyncingYouTube ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingYouTube ? 'Sinkronisasi...' : 'Tarik dari YouTube Data API'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setEditingSermonId(null);
+                      setSermonForm({
+                        title: '',
+                        speaker: 'Ps. Yohanes Sutono',
+                        passage: '',
+                        date: 'Minggu, 30 Agustus 2026',
+                        youtubeUrl: 'https://www.youtube.com/@GIADeliksariSemarang',
+                        thumbnail: '/images/gallery-2.jpg',
+                        category: 'Ibadah Raya',
+                      });
+                      setIsSermonModalOpen(true);
+                    }}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Khotbah Manual</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={process.env.NEXT_PUBLIC_GOOGLE_DRIVE_GALLERY_URL || "https://drive.google.com/drive/folders/1T_ahqCtmOjdFl0L-MNu7bIQo-8Oz8y9h"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] hover:bg-[#EBDDCF] dark:hover:bg-[#331418] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-bold transition-all flex items-center gap-2"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-[#C59B27]" />
+                    <span>Arsip Google Drive</span>
+                    <ExternalLink className="w-3 h-3 text-stone-400" />
+                  </a>
+
+                  <button
+                    onClick={() => setIsUploadPhotoModalOpen(true)}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Foto ke Cloud</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Storage Info Banner */}
+            <div className="p-4 rounded-2xl bg-[#FEF9EC] dark:bg-[#332612] border border-[#F8E3B5] dark:border-[#543E19] flex items-center justify-between gap-3 text-xs text-[#B87A14] dark:text-[#F0BE5E]">
+              <div className="flex items-center gap-2.5">
+                <HardDrive className="w-4 h-4 shrink-0" />
+                <span>
+                  <strong>Arsitektur Hybrid Rolling Storage</strong>: Master foto diarsipkan selamanya di Google Drive. Galeri web menyimpan 50 foto terkini secara instan &amp; hemat kuota (di bawah 100 MB).
+                </span>
+              </div>
+            </div>
+
+            {/* Sermons CMS List */}
+            {mediaSubTab === 'sermons' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {sermons.map((sermon) => (
+                  <div
+                    key={sermon.id}
+                    className="p-6 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FDF0F0] text-[#9A1620] border border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C] dark:border-[#521E25]">
+                        {sermon.category}
+                      </span>
+                      <h3 className="text-base font-extrabold text-[#1F1617] dark:text-white leading-snug">
+                        {sermon.title}
+                      </h3>
+                      <p className="text-xs font-bold text-[#C5222E]">{sermon.speaker}</p>
+                      <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">{sermon.passage}</p>
+                      <p className="text-[11px] text-[#5A4D4E] dark:text-[#D5C2C4]">{sermon.date}</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#EBDDCF] dark:border-[#3A1C20] flex items-center justify-between gap-2">
+                      <a
+                        href={sermon.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-[#C5222E] flex items-center gap-1 hover:underline"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Link YouTube</span>
+                      </a>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingSermonId(sermon.id);
+                            setSermonForm({
+                              title: sermon.title,
+                              speaker: sermon.speaker,
+                              passage: sermon.passage,
+                              date: sermon.date,
+                              youtubeUrl: sermon.youtubeUrl,
+                              thumbnail: sermon.thumbnail,
+                              category: sermon.category,
+                            });
+                            setIsSermonModalOpen(true);
+                          }}
+                          className="p-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20]"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSermon(sermon.id)}
+                          className="p-2 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Gallery CMS List */}
+            {mediaSubTab === 'gallery' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {gallery.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-[2rem] overflow-hidden bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex flex-col justify-between"
+                  >
+                    <div className="relative aspect-[16/10] w-full bg-[#F7F2E8] dark:bg-[#2A161A]">
+                      <Image
+                        src={item.image || '/images/gallery-1.jpg'}
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#C5222E]/10 text-[#C5222E] border border-[#C5222E]/20">
+                        {item.category.toUpperCase()} • {item.date}
+                      </span>
+                      <h4 className="text-sm font-bold text-[#1F1617] dark:text-white leading-snug">{item.title}</h4>
+                    </div>
+
+                    <div className="p-5 pt-0 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingGalleryId(item.id);
+                          setGalleryForm({
+                            title: item.title,
+                            category: item.category,
+                            image: item.image,
+                            date: item.date,
+                          });
+                          setIsGalleryModalOpen(true);
+                        }}
+                        className="p-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border border-[#EBDDCF] dark:border-[#3A1C20]"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGallery(item.id)}
+                        className="p-2 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 5: INVENTARIS & CHECKLIST OPERASIONAL */}
+        {/* ========================================================================= */}
+        {activeTab === 'inventory' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                  Inventaris & Checklist Alat Ibadah
+                </h2>
+                <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+                  Checklist sound system, multimedia, instrumen musik, dan fasilitas ruangan sebelum ibadah dimulai.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingInvId(null);
+                  setInvForm({
+                    name: '',
+                    category: 'Sound System',
+                    code: '',
+                    quantity: 1,
+                    isChecked: true,
+                    condition: 'good',
+                    location: 'Meja Sound Operator',
+                    notes: '',
+                  });
+                  setIsInvModalOpen(true);
+                }}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Barang</span>
+              </button>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                {['all', 'Sound System', 'Multimedia & Kamera', 'Alat Musik', 'Ibadah & Ruangan'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setInvCategoryFilter(cat)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                      invCategoryFilter === cat
+                        ? 'bg-[#C5222E] text-white shadow-sm'
+                        : 'bg-white dark:bg-[#221215] text-[#5A4D4E] dark:text-[#D5C2C4] hover:bg-[#F7F2E8] dark:hover:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20]'
+                    }`}
+                  >
+                    {cat === 'all' ? 'Semua Kategori' : cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Cari kode / nama barang..."
+                  value={invSearchQuery}
+                  onChange={(e) => setInvSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-2xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
+                />
+              </div>
+            </div>
+
+            {/* Inventory Table */}
+            <div className="overflow-x-auto rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] border-b border-[#EBDDCF] dark:border-[#3A1C20]">
+                  <tr>
+                    <th className="p-4 font-bold">Checklist</th>
+                    <th className="p-4 font-bold">Nama & Kode Barang</th>
+                    <th className="p-4 font-bold">Kategori & Lokasi</th>
+                    <th className="p-4 font-bold">Kondisi</th>
+                    <th className="p-4 font-bold">Pemeriksaan Terakhir</th>
+                    <th className="p-4 font-bold text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EBDDCF] dark:divide-[#3A1C20]">
+                  {inventory
+                    .filter((inv) =>
+                      (invCategoryFilter === 'all' || inv.category === invCategoryFilter) &&
+                      (inv.name.toLowerCase().includes(invSearchQuery.toLowerCase()) ||
+                        inv.code.toLowerCase().includes(invSearchQuery.toLowerCase()))
+                    )
+                    .map((item) => (
+                      <tr key={item.id} className="hover:bg-[#FDFBF7] dark:hover:bg-[#261317] transition-colors">
+                        <td className="p-4">
+                          <button
+                            onClick={() => handleToggleInventoryCheck(item)}
+                            className="p-1 rounded-lg text-[#C5222E] hover:bg-[#FDF0F0] dark:hover:bg-[#331418] transition-colors"
+                          >
+                            {item.isChecked ? (
+                              <CheckSquare className="w-5 h-5 text-emerald-600" />
+                            ) : (
+                              <Square className="w-5 h-5 text-stone-400" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-[#1F1617] dark:text-white">{item.name}</div>
+                          <div className="text-xs text-stone-500 font-mono">Kode: {item.code} • Jml: {item.quantity} unit</div>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F7F2E8] text-[#5A4D4E] dark:bg-[#2A161A] dark:text-[#D5C2C4] border border-[#EBDDCF] dark:border-[#3A1C20] inline-block mb-1">
+                            {item.category}
+                          </span>
+                          <div className="text-xs text-stone-500">{item.location}</div>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold border inline-block ${
+                              item.condition === 'good'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : item.condition === 'maintenance'
+                                ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E]'
+                                : 'bg-[#FDF0F0] text-[#9A1620] border-[#F5CDD0] dark:bg-[#331418] dark:text-[#F2828C]'
+                            }`}
+                          >
+                            {item.condition === 'good' ? 'Baik / Normal' : item.condition === 'maintenance' ? 'Perlu Pengecekan' : 'Rusak / Servis'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-xs text-stone-500">
+                          {item.lastCheckedAt || '-'}
+                          {item.checkedBy && <div className="text-[10px] text-stone-400">oleh: {item.checkedBy}</div>}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingInvId(item.id);
+                                setInvForm({
+                                  name: item.name,
+                                  category: item.category,
+                                  code: item.code,
+                                  quantity: item.quantity,
+                                  isChecked: item.isChecked,
+                                  condition: item.condition,
+                                  location: item.location,
+                                  notes: item.notes || '',
+                                });
+                                setIsInvModalOpen(true);
+                              }}
+                              className="p-2 rounded-xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20]"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteInventory(item.id)}
+                              className="p-2 rounded-xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25]"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: ANNOUNCEMENT */}
+      {/* ========================================================================= */}
+      {isAnnModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-xl bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                {editingAnnId ? 'Edit Warta Jemaat' : 'Tambah Warta Jemaat Baru'}
+              </h3>
+              <button onClick={() => setIsAnnModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Judul Warta *</label>
+                <input
+                  type="text"
+                  required
+                  value={annForm.title}
+                  onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
+                  placeholder="Contoh: Ibadah Padang Pemuda & Remaja"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none focus:ring-2 focus:ring-[#C5222E]/30"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kategori Komunitas *</label>
+                  <select
+                    value={annForm.category}
+                    onChange={(e) => setAnnForm({ ...annForm, category: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="general">Ibadah Raya / Umum</option>
+                    <option value="youth">Grow Generation (Youth)</option>
+                    <option value="kidz">COC Kidz (Sekolah Minggu)</option>
+                    <option value="hana">Wanita Hana & Komsel</option>
+                    <option value="all">Semua Komunitas</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Tanggal Kegiatan *</label>
+                  <input
+                    type="date"
+                    required
+                    value={annForm.eventDate}
+                    onChange={(e) => setAnnForm({ ...annForm, eventDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Isi / Deskripsi Warta *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={annForm.content}
+                  onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })}
+                  placeholder="Tuliskan detail pengumuman warta jemaat..."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Badge Label Teks</label>
+                  <input
+                    type="text"
+                    value={annForm.badgeText}
+                    onChange={(e) => setAnnForm({ ...annForm, badgeText: e.target.value })}
+                    placeholder="Contoh: Khusus, Penting, Youth Event"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Penulis / Unit Pelayanan</label>
+                  <input
+                    type="text"
+                    value={annForm.author}
+                    onChange={(e) => setAnnForm({ ...annForm, author: e.target.value })}
+                    placeholder="Sekretariat GIA Deliksari"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
+                  <input
+                    type="checkbox"
+                    checked={annForm.isPinned}
+                    onChange={(e) => setAnnForm({ ...annForm, isPinned: e.target.checked })}
+                    className="rounded text-[#C5222E] focus:ring-[#C5222E]"
+                  />
+                  <span>Sematkan ke Paling Atas (Pinned)</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">
+                  <input
+                    type="checkbox"
+                    checked={annForm.isPublished}
+                    onChange={(e) => setAnnForm({ ...annForm, isPublished: e.target.checked })}
+                    className="rounded text-[#C5222E] focus:ring-[#C5222E]"
+                  />
+                  <span>Tayangkan Langsung (Publish)</span>
+                </label>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAnnModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
+                >
+                  Simpan Warta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: ROSTER PELAYAN */}
+      {/* ========================================================================= */}
+      {isRosterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                {editingRosterId ? 'Edit Petugas Ibadah' : 'Tambah Petugas Ibadah'}
+              </h3>
+              <button onClick={() => setIsRosterModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRoster} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kategori Ibadah *</label>
+                <select
+                  value={rosterForm.serviceCategory}
+                  onChange={(e) => setRosterForm({ ...rosterForm, serviceCategory: e.target.value as any })}
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                >
+                  <option value="general">Ibadah Raya (Umum)</option>
+                  <option value="youth">Grow Generation (Youth)</option>
+                  <option value="kidz">COC Kidz (Sekolah Minggu)</option>
+                  <option value="hana">Wanita Hana & Komsel</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Tugas / Role *</label>
+                  <input
+                    type="text"
+                    required
+                    value={rosterForm.role}
+                    onChange={(e) => setRosterForm({ ...rosterForm, role: e.target.value })}
+                    placeholder="Worship Leader, Pemain Musik, Usher"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Tanggal Ibadah *</label>
+                  <input
+                    type="date"
+                    required
+                    value={rosterForm.serviceDate}
+                    onChange={(e) => setRosterForm({ ...rosterForm, serviceDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Nama Pelayan *</label>
+                <input
+                  type="text"
+                  required
+                  value={rosterForm.servantName}
+                  onChange={(e) => setRosterForm({ ...rosterForm, servantName: e.target.value })}
+                  placeholder="Nama lengkap pelayan / nama tim..."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Nomor WhatsApp / HP</label>
+                  <input
+                    type="tel"
+                    value={rosterForm.phone}
+                    onChange={(e) => setRosterForm({ ...rosterForm, phone: e.target.value })}
+                    placeholder="081234567890"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Status Kesiapan *</label>
+                  <select
+                    value={rosterForm.status}
+                    onChange={(e) => setRosterForm({ ...rosterForm, status: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="confirmed">🟢 Siap Melayani</option>
+                    <option value="pending">⏳ Menunggu Konfirmasi</option>
+                    <option value="replacement">🟡 Perlu Pengganti</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Catatan Teknis / Lagu</label>
+                <textarea
+                  rows={2}
+                  value={rosterForm.notes}
+                  onChange={(e) => setRosterForm({ ...rosterForm, notes: e.target.value })}
+                  placeholder="Jadwal soundcheck, briefing, atau tema..."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRosterModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
+                >
+                  Simpan Petugas
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: BROADCAST WHATSAPP PELAYAN */}
+      {/* ========================================================================= */}
+      {isBroadcastModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-[#C5222E]" />
+                <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                  Template Broadcast WhatsApp
+                </h3>
+              </div>
+              <button onClick={() => setIsBroadcastModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
+              Salin pesan di bawah ini untuk dibagikan ke grup WhatsApp pelayan atau kirim pengingat tugas mingguan.
+            </p>
+
+            <div className="p-4 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-xs font-mono text-[#1F1617] dark:text-[#F5EFEB] whitespace-pre-wrap max-h-60 overflow-y-auto leading-relaxed">
+              {broadcastText}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(broadcastText);
+                  showToast('Teks broadcast berhasil disalin ke clipboard!');
+                  setIsBroadcastModalOpen(false);
+                }}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold flex items-center gap-2 shadow-md"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Salin Teks Broadcast</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: CETAK / EXPORT JADWAL MINGGUAN */}
+      {/* ========================================================================= */}
+      {isPrintModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white text-stone-900 rounded-[2.5rem] shadow-2xl p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-[#C5222E]">
+                  Jadwal Petugas Pelayanan GIA Deliksari
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Format Siap Cetak A4 / Papan Pengumuman Gereja
+                </p>
+              </div>
+              <button onClick={() => setIsPrintModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div id="printable-roster" className="space-y-4 text-xs sm:text-sm">
+              <div className="p-4 rounded-xl bg-stone-50 border text-center space-y-1">
+                <h4 className="font-extrabold text-base uppercase tracking-wider">{getCategoryLabel(rosterCategoryTab)}</h4>
+                <p className="text-stone-600 text-xs">GIA Deliksari — "Growing Church!" • Jl. Deliksari Gunungpati Semarang</p>
+              </div>
+
+              <table className="w-full text-left border-collapse border border-stone-200">
+                <thead className="bg-stone-100">
+                  <tr>
+                    <th className="p-3 border border-stone-200 font-bold">No</th>
+                    <th className="p-3 border border-stone-200 font-bold">Peran / Tugas</th>
+                    <th className="p-3 border border-stone-200 font-bold">Nama Petugas</th>
+                    <th className="p-3 border border-stone-200 font-bold">Kesiapan</th>
+                    <th className="p-3 border border-stone-200 font-bold">Catatan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentCategoryRoster.map((r, idx) => (
+                    <tr key={r.id} className="border border-stone-200">
+                      <td className="p-3 border border-stone-200 text-center">{idx + 1}</td>
+                      <td className="p-3 border border-stone-200 font-bold">{r.role}</td>
+                      <td className="p-3 border border-stone-200">{r.servantName}</td>
+                      <td className="p-3 border border-stone-200">{r.status === 'confirmed' ? 'Siap' : r.status === 'replacement' ? 'Pengganti' : 'Menunggu'}</td>
+                      <td className="p-3 border border-stone-200 text-stone-500">{r.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t">
+              <button
+                onClick={() => setIsPrintModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-bold"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-2.5 rounded-xl bg-[#C5222E] text-white text-xs font-bold flex items-center gap-2 shadow-md"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak Lembar Jadwal (Print)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: KHOTBAH */}
+      {/* ========================================================================= */}
+      {isSermonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                {editingSermonId ? 'Edit Arsip Khotbah' : 'Tambah Khotbah Baru'}
+              </h3>
+              <button onClick={() => setIsSermonModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSermon} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Judul Khotbah *</label>
+                <input
+                  type="text"
+                  required
+                  value={sermonForm.title}
+                  onChange={(e) => setSermonForm({ ...sermonForm, title: e.target.value })}
+                  placeholder="Contoh: Bertumbuh Kuat di Tengah Badai"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Pengkhotbah *</label>
+                  <input
+                    type="text"
+                    required
+                    value={sermonForm.speaker}
+                    onChange={(e) => setSermonForm({ ...sermonForm, speaker: e.target.value })}
+                    placeholder="Ps. Yohanes Sutono"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Ayat Alkitab *</label>
+                  <input
+                    type="text"
+                    required
+                    value={sermonForm.passage}
+                    onChange={(e) => setSermonForm({ ...sermonForm, passage: e.target.value })}
+                    placeholder="Kolose 2:6-7"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Tanggal Ibadah</label>
+                  <input
+                    type="text"
+                    value={sermonForm.date}
+                    onChange={(e) => setSermonForm({ ...sermonForm, date: e.target.value })}
+                    placeholder="Minggu, 30 Agustus 2026"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kategori Ibadah</label>
+                  <select
+                    value={sermonForm.category}
+                    onChange={(e) => setSermonForm({ ...sermonForm, category: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="Ibadah Raya">Ibadah Raya</option>
+                    <option value="Grow Generation Youth">Grow Generation Youth</option>
+                    <option value="Wanita Hana">Wanita Hana</option>
+                    <option value="Doa Malam">Doa Malam</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Link Video YouTube *</label>
+                <input
+                  type="url"
+                  required
+                  value={sermonForm.youtubeUrl}
+                  onChange={(e) => setSermonForm({ ...sermonForm, youtubeUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsSermonModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
+                >
+                  Simpan Khotbah
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: GALERI FOTO */}
+      {/* ========================================================================= */}
+      {isGalleryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                {editingGalleryId ? 'Edit Foto Galeri' : 'Tambah Foto Galeri'}
+              </h3>
+              <button onClick={() => setIsGalleryModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGallery} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Judul / Keterangan Foto *</label>
+                <input
+                  type="text"
+                  required
+                  value={galleryForm.title}
+                  onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
+                  placeholder="Contoh: Praise & Worship Ibadah Minggu"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kategori *</label>
+                  <select
+                    value={galleryForm.category}
+                    onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="ibadah">Ibadah</option>
+                    <option value="worship">Worship</option>
+                    <option value="youth">Youth</option>
+                    <option value="komunitas">Komunitas</option>
+                    <option value="umum">Umum</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Bulan / Tahun</label>
+                  <input
+                    type="text"
+                    value={galleryForm.date}
+                    onChange={(e) => setGalleryForm({ ...galleryForm, date: e.target.value })}
+                    placeholder="Agustus 2026"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">URL Gambar / Path Foto *</label>
+                <input
+                  type="text"
+                  required
+                  value={galleryForm.image}
+                  onChange={(e) => setGalleryForm({ ...galleryForm, image: e.target.value })}
+                  placeholder="/images/gallery-1.jpg atau https://..."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsGalleryModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
+                >
+                  Simpan Foto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: INVENTORY */}
+      {/* ========================================================================= */}
+      {isInvModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] rounded-[2.5rem] shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
+                {editingInvId ? 'Edit Barang Inventaris' : 'Tambah Barang Inventaris'}
+              </h3>
+              <button onClick={() => setIsInvModalOpen(false)} className="p-2 text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInventory} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Nama Barang *</label>
+                <input
+                  type="text"
+                  required
+                  value={invForm.name}
+                  onChange={(e) => setInvForm({ ...invForm, name: e.target.value })}
+                  placeholder="Contoh: Shure Beta 58A Wireless"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kategori *</label>
+                  <select
+                    value={invForm.category}
+                    onChange={(e) => setInvForm({ ...invForm, category: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="Sound System">Sound System</option>
+                    <option value="Multimedia & Kamera">Multimedia & Kamera</option>
+                    <option value="Alat Musik">Alat Musik</option>
+                    <option value="Ibadah & Ruangan">Ibadah & Ruangan</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kode Barang *</label>
+                  <input
+                    type="text"
+                    required
+                    value={invForm.code}
+                    onChange={(e) => setInvForm({ ...invForm, code: e.target.value })}
+                    placeholder="MIC-01"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Jumlah Unit</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={invForm.quantity}
+                    onChange={(e) => setInvForm({ ...invForm, quantity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Kondisi Alat *</label>
+                  <select
+                    value={invForm.condition}
+                    onChange={(e) => setInvForm({ ...invForm, condition: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                  >
+                    <option value="good">🟢 Baik / Normal</option>
+                    <option value="maintenance">🟡 Perlu Pengecekan</option>
+                    <option value="broken">🔴 Rusak / Perlu Servis</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Lokasi Penyimpanan *</label>
+                <input
+                  type="text"
+                  required
+                  value={invForm.location}
+                  onChange={(e) => setInvForm({ ...invForm, location: e.target.value })}
+                  placeholder="Meja Sound, Ruang Pastori, dsb."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#1F1617] dark:text-[#F5EFEB]">Catatan Pengecekan</label>
+                <textarea
+                  rows={2}
+                  value={invForm.notes}
+                  onChange={(e) => setInvForm({ ...invForm, notes: e.target.value })}
+                  placeholder="Kabel, adaptor, baterai, dsb."
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] border border-[#EBDDCF] dark:border-[#3A1C20] text-sm text-[#1F1617] dark:text-[#F5EFEB] outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsInvModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] text-white text-xs font-bold shadow-md"
+                >
+                  Simpan Inventaris
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Photo Modal */}
+      <UploadPhotoModal
+        isOpen={isUploadPhotoModalOpen}
+        onClose={() => setIsUploadPhotoModalOpen(false)}
+        onUploadSuccess={(newItem) => {
+          setGallery((prev) => [newItem, ...prev]);
+          showToast('Foto dokumentasi berhasil ditambahkan ke galeri!');
+        }}
+      />
+
+      <Footer />
+    </main>
+  );
+}
