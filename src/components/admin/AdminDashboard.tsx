@@ -59,6 +59,7 @@ import { WhatsAppIcon, YouTubeIcon } from '@/components/Icons';
 import UploadPhotoModal from '@/components/UploadPhotoModal';
 import { useToast } from '@/components/admin/useToast';
 import { useAdminData } from '@/components/admin/useAdminData';
+import AnnouncementsTab from '@/components/admin/tabs/AnnouncementsTab';
 
 type Role = 'super' | 'admin' | 'treasurer';
 
@@ -762,121 +763,41 @@ export default function AdminDashboard() {
         {/* TAB 1: WARTA JEMAAT */}
         {/* ========================================================================= */}
         {activeTab === 'announcements' && (
-          <div className="space-y-6 animate-in fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-extrabold text-[#1F1617] dark:text-white">
-                  Kelola Warta & Pengumuman Jemaat
-                </h2>
-                <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4]">
-                  Warta yang dipublish akan otomatis tayang di halaman utama website jemaat.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingAnnId(null);
-                  setAnnForm({
-                    title: '',
-                    category: 'general',
-                    content: '',
-                    eventDate: new Date().toISOString().split('T')[0],
-                    isPinned: false,
-                    isPublished: true,
-                    badgeText: 'Warta Baru',
-                    author: 'Sekretariat GIA Deliksari',
-                  });
-                  setIsAnnModalOpen(true);
-                }}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C5222E] to-[#80141C] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-900/10 flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Warta Baru</span>
-              </button>
-            </div>
-
-            {/* List Announcements Table / Cards */}
-            <div className="space-y-4">
-              {announcements.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-6 rounded-[2rem] bg-white dark:bg-[#221215] border border-[#EBDDCF] dark:border-[#3A1C20] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-[#C5222E]/40 transition-colors"
-                >
-                  <div className="space-y-2 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryBadgeClass(item.category)}`}>
-                        {getCategoryLabel(item.category)}
-                      </span>
-                      {item.isPinned && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FEF9EC] text-[#B87A14] border border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19] flex items-center gap-1">
-                          <Pin className="w-3 h-3" />
-                          <span>Tersemat (Pinned)</span>
-                        </span>
-                      )}
-                      {!item.isPublished && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F7F2E8] text-[#6E5D5F] border border-[#EBDDCF] dark:bg-[#2A161A] dark:text-[#B5A1A3] dark:border-[#3A1C20]">
-                          Draft (Tidak Tayang)
-                        </span>
-                      )}
-                      <span className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4] flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-[#C5222E]" />
-                        <span>{item.eventDate}</span>
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-extrabold text-[#1F1617] dark:text-white">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-[#5A4D4E] dark:text-[#D5C2C4] line-clamp-2 leading-relaxed">
-                      {item.content}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end md:self-center shrink-0">
-                    <button
-                      onClick={() => handleTogglePinAnnouncement(item)}
-                      title={item.isPinned ? 'Lepas Pin' : 'Sematkan Warta'}
-                      className={`p-3 rounded-2xl border transition-colors ${
-                        item.isPinned
-                          ? 'bg-[#FEF9EC] text-[#B87A14] border-[#F8E3B5] dark:bg-[#332612] dark:text-[#F0BE5E] dark:border-[#543E19]'
-                          : 'bg-[#F7F2E8] dark:bg-[#2A161A] text-[#5A4D4E] dark:text-[#D5C2C4] border-[#EBDDCF] dark:border-[#3A1C20]'
-                      }`}
-                    >
-                      <Pin className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setEditingAnnId(item.id);
-                        setAnnForm({
-                          title: item.title,
-                          category: item.category,
-                          content: item.content,
-                          eventDate: item.eventDate,
-                          isPinned: item.isPinned,
-                          isPublished: item.isPublished,
-                          badgeText: item.badgeText || '',
-                          author: item.author || 'Sekretariat GIA Deliksari',
-                        });
-                        setIsAnnModalOpen(true);
-                      }}
-                      className="p-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#2A161A] text-[#1F1617] dark:text-[#F5EFEB] hover:bg-[#EBDDCF] dark:hover:bg-[#3A1C20] border border-[#EBDDCF] dark:border-[#3A1C20] transition-colors"
-                      title="Edit Warta"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteAnnouncement(item.id)}
-                      className="p-3 rounded-2xl bg-[#FDF0F0] dark:bg-[#331418] hover:bg-[#FBE2E4] dark:hover:bg-[#451B21] text-[#9A1620] dark:text-[#F2828C] border border-[#F5CDD0] dark:border-[#521E25] transition-colors"
-                      title="Hapus Warta"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <AnnouncementsTab
+            announcements={announcements}
+            onCreate={() => {
+              setEditingAnnId(null);
+              setAnnForm({
+                title: '',
+                category: 'general',
+                content: '',
+                eventDate: new Date().toISOString().split('T')[0],
+                isPinned: false,
+                isPublished: true,
+                badgeText: 'Warta Baru',
+                author: 'Sekretariat GIA Deliksari',
+              });
+              setIsAnnModalOpen(true);
+            }}
+            onEdit={(item) => {
+              setEditingAnnId(item.id);
+              setAnnForm({
+                title: item.title,
+                category: item.category,
+                content: item.content,
+                eventDate: item.eventDate,
+                isPinned: item.isPinned,
+                isPublished: item.isPublished,
+                badgeText: item.badgeText || '',
+                author: item.author || 'Sekretariat GIA Deliksari',
+              });
+              setIsAnnModalOpen(true);
+            }}
+            onTogglePin={handleTogglePinAnnouncement}
+            onDelete={handleDeleteAnnouncement}
+            getCategoryLabel={getCategoryLabel}
+            getCategoryBadgeClass={getCategoryBadgeClass}
+          />
         )}
 
         {/* ========================================================================= */}
