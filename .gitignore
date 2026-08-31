@@ -58,4 +58,6 @@ public/images/**/*.avif
 # Playwright E2E artifacts
 tests/**/playwright-report/
 tests/**/test-results/
+test-results/
+playwright-report/
 playwright/.cache/
