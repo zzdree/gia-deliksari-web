@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE } from '@/lib/admin-session';
+import { ADMIN_SESSION_COOKIE } from '@/lib/admin-session.legacy';
 
 export async function POST() {
   const response = NextResponse.json({ success: true, message: 'Logout berhasil.' });

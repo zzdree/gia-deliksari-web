@@ -1,3 +1,20 @@
+/**
+ * @deprecated — kept for legacy callers only.
+ *
+ * This module predates the multi-role authentication system in `src/lib/auth.ts`
+ * (migration `20260831100000_multi_role_users.sql`). It still powers a handful
+ * of legacy routes (`/api/auth/logout`, `/api/debug/env`, `/api/gallery/sync`)
+ * and the `gia_admin_session` cookie shape used during the transitional period.
+ *
+ * New code MUST use:
+ *   - `requireRole(req, ['super' | 'admin' | 'treasurer'])` for route guards
+ *   - `setSessionCookie` / `clearSessionCookie` for cookie management
+ *   - The `gia_session` cookie (HMAC-SHA256 over `{ userId, roles, expiresAt }`)
+ *
+ * Once the legacy cookie is no longer issued by any route, this file can be
+ * deleted along with the import shims above.
+ */
+
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const ADMIN_SESSION_COOKIE = 'gia_admin_session';

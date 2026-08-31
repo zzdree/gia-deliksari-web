@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 import { getDriveClient } from '@/lib/googleDrive';
-import { readSessionFromCookie } from '@/lib/admin-session';
+import { readSessionFromCookie } from '@/lib/admin-session.legacy';
 
 /**
  * GaleriSync Worker — sinkronisasi 1 arah dari Google Drive → Supabase.

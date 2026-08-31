@@ -46,10 +46,26 @@ export function isSupabaseAdminConfigured(): boolean {
  * Returns a singleton admin client. We hold the client across requests so we
  * don't pay the connection-pool cost on every call, but we lazily resolve env
  * on first call (which happens at runtime in the serverless function).
+ *
+ * Emits a single one-shot warning when the env is missing, so misconfigured
+ * deployments show up clearly in Vercel function logs instead of silently
+ * returning null to every caller.
  */
+let _warnedMissingEnv = false;
+
 export function getSupabaseAdmin(): SupabaseClient | null {
   if (_client) return _client;
-  if (!isSupabaseAdminConfigured()) return null;
+  if (!isSupabaseAdminConfigured()) {
+    if (!_warnedMissingEnv) {
+      _warnedMissingEnv = true;
+      console.error(
+        '[supabaseAdmin] FATAL: Supabase admin env vars not configured. ' +
+          'Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel. ' +
+          'All server-side DB operations will fail until this is fixed.',
+      );
+    }
+    return null;
+  }
   _client = createClient(getUrl(), getServiceKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });

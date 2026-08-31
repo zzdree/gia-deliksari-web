@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE, hasValidAdminSession } from '@/lib/admin-session';
+import { ADMIN_SESSION_COOKIE, hasValidAdminSession } from '@/lib/admin-session.legacy';
 import { isSupabaseAdminConfigured, getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
